@@ -5,18 +5,11 @@ from datetime import datetime
 import random
 import string
 
-from database import SessionLocal, Booking
+from database import get_db, Booking
 from schemas import BookingCreate, BookingResponse, BookingUpdate
-from auth import get_current_admin_user
+from auth import require_admin
 
-router = APIRouter(prefix="/api", tags=["bookings"])
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+router = APIRouter()
 
 def generate_booking_number():
     """Generate unique booking number"""
@@ -25,7 +18,7 @@ def generate_booking_number():
     return f"BK{timestamp}{random_part}"
 
 # Public endpoint - create booking
-@router.post("/bookings", response_model=BookingResponse)
+@router.post("/api/bookings", response_model=BookingResponse)
 def create_booking(booking: BookingCreate, db: Session = Depends(get_db)):
     """Create new boutique booking"""
     
@@ -53,12 +46,12 @@ def create_booking(booking: BookingCreate, db: Session = Depends(get_db)):
     return db_booking
 
 # Admin endpoints
-@router.get("/admin/bookings", response_model=List[BookingResponse])
+@router.get("/api/admin/bookings", response_model=List[BookingResponse])
 def get_bookings(
     skip: int = 0,
     limit: int = 50,
     status: str = None,
-    current_user: dict = Depends(get_current_admin_user),
+    current_user: dict = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
     """Get all bookings (admin only)"""
@@ -70,10 +63,10 @@ def get_bookings(
     bookings = query.order_by(Booking.created_at.desc()).offset(skip).limit(limit).all()
     return bookings
 
-@router.get("/admin/bookings/{booking_id}", response_model=BookingResponse)
+@router.get("/api/admin/bookings/{booking_id}", response_model=BookingResponse)
 def get_booking(
     booking_id: int,
-    current_user: dict = Depends(get_current_admin_user),
+    current_user: dict = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
     """Get booking by ID (admin only)"""
@@ -82,11 +75,11 @@ def get_booking(
         raise HTTPException(status_code=404, detail="Booking not found")
     return booking
 
-@router.put("/admin/bookings/{booking_id}/status", response_model=BookingResponse)
+@router.put("/api/admin/bookings/{booking_id}/status", response_model=BookingResponse)
 def update_booking_status(
     booking_id: int,
     update: BookingUpdate,
-    current_user: dict = Depends(get_current_admin_user),
+    current_user: dict = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
     """Update booking status (admin only)"""
@@ -102,10 +95,10 @@ def update_booking_status(
     
     return booking
 
-@router.delete("/admin/bookings/{booking_id}")
+@router.delete("/api/admin/bookings/{booking_id}")
 def delete_booking(
     booking_id: int,
-    current_user: dict = Depends(get_current_admin_user),
+    current_user: dict = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
     """Delete booking (admin only)"""
@@ -118,9 +111,9 @@ def delete_booking(
     
     return {"message": "Booking deleted successfully"}
 
-@router.get("/admin/bookings/stats/summary")
+@router.get("/api/admin/bookings/stats/summary")
 def get_bookings_stats(
-    current_user: dict = Depends(get_current_admin_user),
+    current_user: dict = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
     """Get booking statistics (admin only)"""

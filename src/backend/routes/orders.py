@@ -18,7 +18,7 @@ def generate_order_number():
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
     return f"ORD-{timestamp}"
 
-@router.post("/orders")
+@router.post("/api/orders")
 async def create_order(order: OrderCreate, db: Session = Depends(get_db)):
     """Create new order (public endpoint)"""
     # Generate order number
@@ -49,7 +49,7 @@ async def create_order(order: OrderCreate, db: Session = Depends(get_db)):
         "id": db_order.id
     }
 
-@router.get("/admin/orders")
+@router.get("/api/admin/orders")
 async def get_orders(
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
@@ -96,7 +96,7 @@ async def get_orders(
         }
     }
 
-@router.get("/admin/orders/{order_id}")
+@router.get("/api/admin/orders/{order_id}")
 async def get_order(
     order_id: str,
     db: Session = Depends(get_db),
@@ -129,7 +129,7 @@ async def get_order(
         "updatedAt": order.updated_at.isoformat() if order.updated_at else None
     }
 
-@router.put("/admin/orders/{order_id}/status")
+@router.put("/api/admin/orders/{order_id}/status")
 async def update_order_status(
     order_id: str,
     status_update: OrderStatusUpdate,

@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { SaveIcon } from 'lucide-react';
-import { api } from '../../services/api';
 interface Settings {
   site: {
     name: string;
@@ -23,49 +22,42 @@ interface Settings {
     twitter: string;
   };
 }
+const DEFAULT_SETTINGS: Settings = {
+  site: {
+    name: 'Orient Watch',
+    email: 'info@orient.uz',
+    phone: '+998 71 123 45 67',
+    address: 'Ташкент, Узбекистан'
+  },
+  shipping: {
+    freeShippingThreshold: 100000,
+    standardCost: 50000,
+    expressCost: 100000
+  },
+  currency: {
+    code: 'UZS',
+    symbol: '₽'
+  },
+  social: {
+    facebook: 'https://facebook.com/orient',
+    instagram: 'https://instagram.com/orient',
+    twitter: 'https://twitter.com/orient'
+  }
+};
 export function AdminSettings() {
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [settings, setSettings] = useState<Settings>({
-    site: {
-      name: '',
-      email: '',
-      phone: '',
-      address: ''
-    },
-    shipping: {
-      freeShippingThreshold: 0,
-      standardCost: 0,
-      expressCost: 0
-    },
-    currency: {
-      code: '',
-      symbol: ''
-    },
-    social: {
-      facebook: '',
-      instagram: '',
-      twitter: ''
-    }
+  const [settings, setSettings] = useState<Settings>(() => {
+    // Load from localStorage
+    const saved = localStorage.getItem('siteSettings');
+    return saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
   });
-  useEffect(() => {
-    fetchSettings();
-  }, []);
-  const fetchSettings = async () => {
-    setLoading(true);
-    try {
-      const data = await api.getSettings();
-      setSettings(data);
-    } catch (error) {
-      console.error('Error fetching settings:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
   const handleSave = async () => {
     setSaving(true);
     try {
-      await api.updateSettings(settings);
+      // Save to localStorage
+      localStorage.setItem('siteSettings', JSON.stringify(settings));
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 500));
       alert('Настройки сохранены!');
     } catch (error) {
       console.error('Error saving settings:', error);
@@ -74,11 +66,6 @@ export function AdminSettings() {
       setSaving(false);
     }
   };
-  if (loading) {
-    return <div className="flex items-center justify-center min-h-[400px]">
-        <div className="w-12 h-12 border-4 border-[#C8102E] border-t-transparent rounded-full animate-spin"></div>
-      </div>;
-  }
   return <div className="space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -282,6 +269,14 @@ export function AdminSettings() {
           })} className="w-full px-4 py-3 border-2 border-black/20 focus:border-[#C8102E] focus:outline-none" placeholder="https://twitter.com/orient" />
           </div>
         </div>
+      </div>
+
+      {/* Info */}
+      <div className="bg-blue-50 border-2 border-blue-200 p-6">
+        <p className="text-sm text-blue-800">
+          <strong>Примечание:</strong> Настройки сохраняются локально в
+          браузере. Для production рекомендуется создать backend API endpoint.
+        </p>
       </div>
     </div>;
 }

@@ -2,6 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { SaveIcon, PlusIcon, TrashIcon, GripVerticalIcon } from 'lucide-react';
 import { api } from '../../services/api';
 import { ImageUpload } from '../../components/admin/ImageUpload';
+interface SiteLogo {
+  logoUrl: string;
+  logoDarkUrl: string | null;
+}
 interface HeroContent {
   title: string;
   subtitle: string;
@@ -34,6 +38,11 @@ interface HeritageSection {
 export function AdminContent() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  // Site Logo
+  const [siteLogo, setSiteLogo] = useState<SiteLogo>({
+    logoUrl: 'https://via.placeholder.com/150x50?text=ORIENT',
+    logoDarkUrl: null
+  });
   // Hero Section
   const [heroContent, setHeroContent] = useState<HeroContent>({
     title: 'НАЙДИТЕ\nИДЕАЛЬНЫЕ\nЧАСЫ.',
@@ -98,7 +107,8 @@ export function AdminContent() {
   const fetchContent = async () => {
     setLoading(true);
     try {
-      const [heroData, promoData, featuredData, heritageData] = await Promise.all([api.getHeroContent(), api.getPromoBanner(), api.getFeaturedWatches(), api.getHeritageSection()]);
+      const [logoData, heroData, promoData, featuredData, heritageData] = await Promise.all([api.getSiteLogo(), api.getHeroContent(), api.getPromoBanner(), api.getFeaturedWatches(), api.getHeritageSection()]);
+      setSiteLogo(logoData);
       setHeroContent(heroData);
       setPromoBanner(promoData);
       setFeaturedWatches(featuredData);
@@ -107,6 +117,18 @@ export function AdminContent() {
       console.error('Error fetching content:', error);
     } finally {
       setLoading(false);
+    }
+  };
+  const handleSaveLogo = async () => {
+    setSaving(true);
+    try {
+      await api.updateSiteLogo(siteLogo);
+      alert('Логотип обновлен!');
+    } catch (error) {
+      console.error('Error saving logo:', error);
+      alert('Ошибка сохранения');
+    } finally {
+      setSaving(false);
     }
   };
   const handleSaveHero = async () => {
@@ -136,7 +158,10 @@ export function AdminContent() {
   const handleSaveFeatured = async () => {
     setSaving(true);
     try {
-      await api.updateFeaturedWatches(featuredWatches);
+      // Extract only product IDs for backend
+      const productIds = featuredWatches.filter(w => w.productId) // Only include watches with productId
+      .map(w => w.productId);
+      await api.updateFeaturedWatches(productIds);
       alert('Избранные часы обновлены!');
     } catch (error) {
       console.error('Error saving featured:', error);
@@ -189,6 +214,56 @@ export function AdminContent() {
         <p className="text-black/60">
           Управление всем контентом на главной странице
         </p>
+      </div>
+
+      {/* Site Logo */}
+      <div className="bg-white p-8 border-2 border-black/10">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight uppercase">
+              Логотип сайта
+            </h2>
+            <p className="text-sm text-black/60 mt-1">
+              Логотип отображается в шапке сайта
+            </p>
+          </div>
+          <button onClick={handleSaveLogo} disabled={saving} className="flex items-center space-x-2 bg-[#C8102E] hover:bg-[#A00D24] text-white px-6 py-3 text-sm font-semibold uppercase tracking-wider transition-all disabled:opacity-50">
+            <SaveIcon className="w-4 h-4" strokeWidth={2} />
+            <span>Сохранить</span>
+          </button>
+        </div>
+
+        <div className="space-y-6">
+          <ImageUpload value={siteLogo.logoUrl} onChange={url => setSiteLogo({
+          ...siteLogo,
+          logoUrl: url
+        })} label="Логотип (светлый фон)" required />
+
+          <ImageUpload value={siteLogo.logoDarkUrl || ''} onChange={url => setSiteLogo({
+          ...siteLogo,
+          logoDarkUrl: url || null
+        })} label="Логотип (темный фон)" required={false} />
+
+          <div className="bg-gray-50 p-4 border-2 border-gray-200">
+            <p className="text-sm text-black/60 mb-3">
+              <strong>Предпросмотр:</strong>
+            </p>
+            <div className="flex items-center space-x-8">
+              <div className="bg-white p-4 border-2 border-black/10">
+                <img src={siteLogo.logoUrl} alt="Logo Light" className="h-12 object-contain" />
+                <p className="text-xs text-center mt-2 text-black/50">
+                  Светлый фон
+                </p>
+              </div>
+              {siteLogo.logoDarkUrl && <div className="bg-black p-4">
+                  <img src={siteLogo.logoDarkUrl} alt="Logo Dark" className="h-12 object-contain" />
+                  <p className="text-xs text-center mt-2 text-white/50">
+                    Темный фон
+                  </p>
+                </div>}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Hero Section */}

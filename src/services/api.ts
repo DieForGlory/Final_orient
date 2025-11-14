@@ -201,6 +201,15 @@ class ApiService {
   }
 
   // Content Management
+  getSiteLogo() {
+    return this.request('/api/admin/content/logo');
+  }
+  updateSiteLogo(data: any) {
+    return this.request('/api/admin/content/logo', {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  }
   getHeroContent() {
     return this.request('/api/admin/content/hero');
   }
@@ -222,10 +231,10 @@ class ApiService {
   getFeaturedWatches() {
     return this.request('/api/admin/content/featured-watches');
   }
-  updateFeaturedWatches(data: any) {
+  updateFeaturedWatches(productIds: string[]) {
     return this.request('/api/admin/content/featured-watches', {
       method: 'PUT',
-      body: JSON.stringify(data)
+      body: JSON.stringify(productIds)
     });
   }
   getHeritageSection() {

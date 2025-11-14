@@ -16,9 +16,15 @@ interface ProductFormData {
   stockQuantity: number;
   sku: string;
 }
+interface Collection {
+  id: string;
+  name: string;
+  description: string;
+  active: boolean;
+}
 const INITIAL_FORM_DATA: ProductFormData = {
   name: '',
-  collection: 'SPORTS',
+  collection: '',
   price: 0,
   image: '',
   images: [],
@@ -48,14 +54,31 @@ export function ProductForm() {
   const navigate = useNavigate();
   const isEdit = !!id;
   const [formData, setFormData] = useState<ProductFormData>(INITIAL_FORM_DATA);
+  const [collections, setCollections] = useState<Collection[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   useEffect(() => {
+    loadCollections();
     if (isEdit) {
       loadProduct();
     }
   }, [id]);
+  const loadCollections = async () => {
+    try {
+      const data = await api.getCollections();
+      setCollections(data.filter((c: Collection) => c.active));
+      // Set default collection if creating new product
+      if (!isEdit && data.length > 0) {
+        setFormData(prev => ({
+          ...prev,
+          collection: data[0].name
+        }));
+      }
+    } catch (err) {
+      console.error('Error loading collections:', err);
+    }
+  };
   const loadProduct = async () => {
     setLoading(true);
     try {
@@ -178,9 +201,12 @@ export function ProductForm() {
               ...formData,
               collection: e.target.value
             })} className="w-full px-4 py-3 border-2 border-black/20 focus:border-[#C8102E] focus:outline-none bg-white" required>
-                <option value="SPORTS">SPORTS</option>
-                <option value="CLASSIC">CLASSIC</option>
-                <option value="CONTEMPORARY">CONTEMPORARY</option>
+                {collections.length === 0 ? <option value="">Загрузка коллекций...</option> : <>
+                    <option value="">Выберите коллекцию</option>
+                    {collections.map(collection => <option key={collection.id} value={collection.name}>
+                        {collection.name}
+                      </option>)}
+                  </>}
               </select>
             </div>
 

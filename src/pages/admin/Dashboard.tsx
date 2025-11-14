@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PackageIcon, ShoppingBagIcon, UsersIcon, TrendingUpIcon, ClockIcon, CheckCircleIcon } from 'lucide-react';
+import { api } from '../../services/api';
 interface Stats {
   totalProducts: number;
   totalOrders: number;
@@ -25,18 +26,7 @@ export function AdminDashboard() {
   }, []);
   const fetchDashboardData = async () => {
     try {
-      // TODO: Replace with real API calls
-      const [statsRes, ordersRes] = await Promise.all([fetch('/api/admin/stats', {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('adminToken')}`
-        }
-      }), fetch('/api/admin/orders/recent', {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('adminToken')}`
-        }
-      })]);
-      const statsData = await statsRes.json();
-      const ordersData = await ordersRes.json();
+      const [statsData, ordersData] = await Promise.all([api.getStats(), api.getRecentOrders()]);
       setStats(statsData);
       setRecentOrders(ordersData);
     } catch (error) {
@@ -172,7 +162,7 @@ export function AdminDashboard() {
                 {stats?.completedOrders || 0}
               </p>
               <p className="text-sm text-green-700 uppercase tracking-wider">
-                Завершено сегодня
+                Завершено
               </p>
             </div>
           </div>

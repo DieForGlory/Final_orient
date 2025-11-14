@@ -6,9 +6,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
+from dotenv import load_dotenv
 
 from database import init_db
 from routes import admin, products, collections, orders, content, upload, bookings
+
+# Load environment variables
+load_dotenv()
 
 # Initialize database
 init_db()
@@ -19,21 +23,24 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS
+# CORS - Get allowed origins from environment variable
+cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:3000")
+allowed_origins = [origin.strip() for origin in cors_origins.split(",")]
+
+print(f"🌐 CORS enabled for origins: {allowed_origins}")
+
+# CORS middleware - MUST be added before routes
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
+    expose_headers=["*"],
+    max_age=3600,
 )
 
-# Mount uploads directory
-if not os.path.exists("uploads"):
-    os.makedirs("uploads")
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
-
-# Include routers
+# Include routers BEFORE mounting static files
 app.include_router(admin.router)
 app.include_router(products.router)
 app.include_router(collections.router)
@@ -42,14 +49,33 @@ app.include_router(content.router)
 app.include_router(upload.router)
 app.include_router(bookings.router)
 
+# Mount uploads directory AFTER routes
+upload_dir = os.getenv("UPLOAD_DIR", "uploads")
+if not os.path.exists(upload_dir):
+    os.makedirs(upload_dir)
+app.mount("/uploads", StaticFiles(directory=upload_dir), name="uploads")
+
 @app.get("/")
 def read_root():
-    return {"message": "Orient Watch API"}
+    return {
+        "message": "Orient Watch API",
+        "version": "1.0.0",
+        "status": "running",
+        "cors_origins": allowed_origins
+    }
 
 @app.get("/health")
 def health_check():
     return {"status": "healthy"}
 
+@app.get("/api/test")
+def test_endpoint():
+    """Test endpoint to verify API is working"""
+    return {"message": "API is working!", "cors": "enabled"}
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    port = int(os.getenv("PORT", 8000))
+    print(f"🚀 Starting server on http://0.0.0.0:{port}")
+    print(f"📚 API docs: http://localhost:{port}/docs")
+    uvicorn.run(app, host="0.0.0.0", port=port)

@@ -1,140 +1,223 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ChevronDownIcon } from 'lucide-react';
-interface FilterSection {
-  title: string;
-  options: {
-    label: string;
-    value: string;
-    count?: number;
-  }[];
-}
-const FILTERS: FilterSection[] = [{
-  title: 'КОЛЛЕКЦИЯ',
-  options: [{
-    label: 'Sports',
-    value: 'sports',
-    count: 24
-  }, {
-    label: 'Classic',
-    value: 'classic',
-    count: 18
-  }, {
-    label: 'Contemporary',
-    value: 'contemporary',
-    count: 16
-  }]
-}, {
-  title: 'МЕХАНИЗМ',
-  options: [{
-    label: 'Автоматический',
-    value: 'automatic',
-    count: 42
-  }, {
-    label: 'Механический',
-    value: 'mechanical',
-    count: 16
-  }]
-}, {
-  title: 'МАТЕРИАЛ КОРПУСА',
-  options: [{
-    label: 'Нержавеющая сталь',
-    value: 'steel',
-    count: 48
-  }, {
-    label: 'Титан',
-    value: 'titanium',
-    count: 6
-  }, {
-    label: 'Позолота',
-    value: 'gold',
-    count: 4
-  }]
-}, {
-  title: 'ЦВЕТ ЦИФЕРБЛАТА',
-  options: [{
-    label: 'Черный',
-    value: 'black',
-    count: 22
-  }, {
-    label: 'Синий',
-    value: 'blue',
-    count: 18
-  }, {
-    label: 'Белый',
-    value: 'white',
-    count: 12
-  }, {
-    label: 'Зеленый',
-    value: 'green',
-    count: 6
-  }]
-}, {
-  title: 'ВОДОНЕПРОНИЦАЕМОСТЬ',
-  options: [{
-    label: '200м',
-    value: '200m',
-    count: 28
-  }, {
-    label: '100м',
-    value: '100m',
-    count: 18
-  }, {
-    label: '50м',
-    value: '50m',
-    count: 12
-  }]
-}];
+import { useSearchParams } from 'react-router-dom';
+import { publicApi } from '../services/publicApi';
 export function FilterSidebar() {
-  const [openSections, setOpenSections] = useState<string[]>(FILTERS.map(f => f.title));
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [collections, setCollections] = useState<any[]>([]);
+  const [filters, setFilters] = useState<any>(null);
+  const [priceMin, setPriceMin] = useState(searchParams.get('minPrice') || '');
+  const [priceMax, setPriceMax] = useState(searchParams.get('maxPrice') || '');
+  const [openSections, setOpenSections] = useState<string[]>(['КОЛЛЕКЦИЯ', 'ЦЕНА']);
+  useEffect(() => {
+    loadCollections();
+    loadFilters();
+  }, []);
+  const loadCollections = async () => {
+    try {
+      const data = await publicApi.getCollections();
+      setCollections(data);
+    } catch (error) {
+      console.error('Error loading collections:', error);
+    }
+  };
+  const loadFilters = async () => {
+    try {
+      const data = await publicApi.getFilters();
+      setFilters(data);
+    } catch (error) {
+      console.error('Error loading filters:', error);
+    }
+  };
   const toggleSection = (title: string) => {
     setOpenSections(prev => prev.includes(title) ? prev.filter(t => t !== title) : [...prev, title]);
   };
-  return <aside className="w-full lg:w-64 bg-white border-r border-gray-200">
-      <div className="p-6 border-b border-gray-200">
-        <h2 className="text-lg font-bold tracking-widest">ФИЛЬТРЫ</h2>
+  const handleCollectionChange = (value: string, checked: boolean) => {
+    if (checked) {
+      searchParams.set('collection', value);
+    } else {
+      searchParams.delete('collection');
+    }
+    searchParams.delete('page');
+    setSearchParams(searchParams);
+  };
+  const handleFilterChange = (key: string, value: string, checked: boolean) => {
+    if (checked) {
+      searchParams.set(key, value);
+    } else {
+      searchParams.delete(key);
+    }
+    searchParams.delete('page');
+    setSearchParams(searchParams);
+  };
+  const clearFilters = () => {
+    setSearchParams({});
+    setPriceMin('');
+    setPriceMax('');
+  };
+  const selectedCollection = searchParams.get('collection') || '';
+  return <aside className="w-full lg:w-80 bg-white">
+      <div className="pb-6 border-b border-black/10">
+        <h2 className="text-xl font-bold tracking-tight uppercase">Фильтры</h2>
       </div>
 
-      <div className="divide-y divide-gray-200">
-        {FILTERS.map(section => <div key={section.title} className="p-6">
-            <button onClick={() => toggleSection(section.title)} className="flex items-center justify-between w-full mb-4">
-              <h3 className="text-sm font-medium tracking-widest">
-                {section.title}
+      <div className="divide-y divide-black/10">
+        {/* Collections */}
+        <div className="py-6">
+          <button onClick={() => toggleSection('КОЛЛЕКЦИЯ')} className="flex items-center justify-between w-full mb-4">
+            <h3 className="text-sm font-semibold tracking-wider uppercase">
+              Коллекция
+            </h3>
+            <ChevronDownIcon className={`w-4 h-4 transition-transform ${openSections.includes('КОЛЛЕКЦИЯ') ? 'rotate-180' : ''}`} strokeWidth={2} />
+          </button>
+
+          {openSections.includes('КОЛЛЕКЦИЯ') && <div className="space-y-3">
+              {collections.map(collection => <label key={collection.id} className="flex items-center space-x-3 cursor-pointer group">
+                  <input type="checkbox" checked={selectedCollection === collection.name} onChange={e => handleCollectionChange(collection.name, e.target.checked)} className="w-4 h-4 border-2 border-black/20 text-[#C8102E] focus:ring-[#C8102E] focus:ring-offset-0 cursor-pointer" />
+                  <span className="text-sm text-black/70 group-hover:text-black flex-1 font-medium">
+                    {collection.name}
+                  </span>
+                  {collection.watchCount > 0 && <span className="text-xs text-black/40">
+                      ({collection.watchCount})
+                    </span>}
+                </label>)}
+            </div>}
+        </div>
+
+        {/* Movement */}
+        {filters?.movements && filters.movements.length > 0 && <div className="py-6">
+            <button onClick={() => toggleSection('МЕХАНИЗМ')} className="flex items-center justify-between w-full mb-4">
+              <h3 className="text-sm font-semibold tracking-wider uppercase">
+                Механизм
               </h3>
-              <ChevronDownIcon className={`w-4 h-4 transition-transform ${openSections.includes(section.title) ? 'rotate-180' : ''}`} />
+              <ChevronDownIcon className={`w-4 h-4 transition-transform ${openSections.includes('МЕХАНИЗМ') ? 'rotate-180' : ''}`} strokeWidth={2} />
             </button>
 
-            {openSections.includes(section.title) && <div className="space-y-3">
-                {section.options.map(option => <label key={option.value} className="flex items-center space-x-3 cursor-pointer group">
-                    <input type="checkbox" className="w-4 h-4 border-gray-300 rounded text-[#C8102E] focus:ring-[#C8102E]" />
-                    <span className="text-sm text-gray-700 group-hover:text-black flex-1">
+            {openSections.includes('МЕХАНИЗМ') && <div className="space-y-3">
+                {filters.movements.map((option: any) => <label key={option.value} className="flex items-center space-x-3 cursor-pointer group">
+                    <input type="checkbox" checked={searchParams.get('movement') === option.value} onChange={e => handleFilterChange('movement', option.value, e.target.checked)} className="w-4 h-4 border-2 border-black/20 text-[#C8102E] focus:ring-[#C8102E] focus:ring-offset-0 cursor-pointer" />
+                    <span className="text-sm text-black/70 group-hover:text-black flex-1 font-medium">
                       {option.label}
                     </span>
-                    {option.count && <span className="text-xs text-gray-400">
+                    {option.count > 0 && <span className="text-xs text-black/40">
                         ({option.count})
                       </span>}
                   </label>)}
               </div>}
-          </div>)}
-      </div>
+          </div>}
 
-      {/* Price Range */}
-      <div className="p-6 border-t border-gray-200">
-        <h3 className="text-sm font-medium tracking-widest mb-4">ЦЕНА</h3>
-        <div className="space-y-4">
-          <div className="flex items-center space-x-4">
-            <input type="number" placeholder="От" className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-black" />
-            <span className="text-gray-400">—</span>
-            <input type="number" placeholder="До" className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-black" />
-          </div>
-          <button className="w-full bg-black text-white py-2 text-sm tracking-widest hover:bg-gray-800 transition-colors">
-            ПРИМЕНИТЬ
+        {/* Case Material */}
+        {filters?.caseMaterials && filters.caseMaterials.length > 0 && <div className="py-6">
+            <button onClick={() => toggleSection('МАТЕРИАЛ КОРПУСА')} className="flex items-center justify-between w-full mb-4">
+              <h3 className="text-sm font-semibold tracking-wider uppercase">
+                Материал корпуса
+              </h3>
+              <ChevronDownIcon className={`w-4 h-4 transition-transform ${openSections.includes('МАТЕРИАЛ КОРПУСА') ? 'rotate-180' : ''}`} strokeWidth={2} />
+            </button>
+
+            {openSections.includes('МАТЕРИАЛ КОРПУСА') && <div className="space-y-3">
+                {filters.caseMaterials.map((option: any) => <label key={option.value} className="flex items-center space-x-3 cursor-pointer group">
+                    <input type="checkbox" checked={searchParams.get('caseMaterial') === option.value} onChange={e => handleFilterChange('caseMaterial', option.value, e.target.checked)} className="w-4 h-4 border-2 border-black/20 text-[#C8102E] focus:ring-[#C8102E] focus:ring-offset-0 cursor-pointer" />
+                    <span className="text-sm text-black/70 group-hover:text-black flex-1 font-medium">
+                      {option.label}
+                    </span>
+                    {option.count > 0 && <span className="text-xs text-black/40">
+                        ({option.count})
+                      </span>}
+                  </label>)}
+              </div>}
+          </div>}
+
+        {/* Dial Color */}
+        {filters?.dialColors && filters.dialColors.length > 0 && <div className="py-6">
+            <button onClick={() => toggleSection('ЦВЕТ ЦИФЕРБЛАТА')} className="flex items-center justify-between w-full mb-4">
+              <h3 className="text-sm font-semibold tracking-wider uppercase">
+                Цвет циферблата
+              </h3>
+              <ChevronDownIcon className={`w-4 h-4 transition-transform ${openSections.includes('ЦВЕТ ЦИФЕРБЛАТА') ? 'rotate-180' : ''}`} strokeWidth={2} />
+            </button>
+
+            {openSections.includes('ЦВЕТ ЦИФЕРБЛАТА') && <div className="space-y-3">
+                {filters.dialColors.map((option: any) => <label key={option.value} className="flex items-center space-x-3 cursor-pointer group">
+                    <input type="checkbox" checked={searchParams.get('dialColor') === option.value} onChange={e => handleFilterChange('dialColor', option.value, e.target.checked)} className="w-4 h-4 border-2 border-black/20 text-[#C8102E] focus:ring-[#C8102E] focus:ring-offset-0 cursor-pointer" />
+                    <span className="text-sm text-black/70 group-hover:text-black flex-1 font-medium">
+                      {option.label}
+                    </span>
+                    {option.count > 0 && <span className="text-xs text-black/40">
+                        ({option.count})
+                      </span>}
+                  </label>)}
+              </div>}
+          </div>}
+
+        {/* Water Resistance */}
+        {filters?.waterResistance && filters.waterResistance.length > 0 && <div className="py-6">
+            <button onClick={() => toggleSection('ВОДОНЕПРОНИЦАЕМОСТЬ')} className="flex items-center justify-between w-full mb-4">
+              <h3 className="text-sm font-semibold tracking-wider uppercase">
+                Водонепроницаемость
+              </h3>
+              <ChevronDownIcon className={`w-4 h-4 transition-transform ${openSections.includes('ВОДОНЕПРОНИЦАЕМОСТЬ') ? 'rotate-180' : ''}`} strokeWidth={2} />
+            </button>
+
+            {openSections.includes('ВОДОНЕПРОНИЦАЕМОСТЬ') && <div className="space-y-3">
+                {filters.waterResistance.map((option: any) => <label key={option.value} className="flex items-center space-x-3 cursor-pointer group">
+                    <input type="checkbox" checked={searchParams.get('waterResistance') === option.value} onChange={e => handleFilterChange('waterResistance', option.value, e.target.checked)} className="w-4 h-4 border-2 border-black/20 text-[#C8102E] focus:ring-[#C8102E] focus:ring-offset-0 cursor-pointer" />
+                    <span className="text-sm text-black/70 group-hover:text-black flex-1 font-medium">
+                      {option.label}
+                    </span>
+                    {option.count > 0 && <span className="text-xs text-black/40">
+                        ({option.count})
+                      </span>}
+                  </label>)}
+              </div>}
+          </div>}
+
+        {/* Price Range */}
+        <div className="py-6">
+          <button onClick={() => toggleSection('ЦЕНА')} className="flex items-center justify-between w-full mb-4">
+            <h3 className="text-sm font-semibold tracking-wider uppercase">
+              Цена
+            </h3>
+            <ChevronDownIcon className={`w-4 h-4 transition-transform ${openSections.includes('ЦЕНА') ? 'rotate-180' : ''}`} strokeWidth={2} />
           </button>
+
+          {openSections.includes('ЦЕНА') && <div className="space-y-4">
+              <div className="flex items-center space-x-3">
+                <input type="number" placeholder="От" value={priceMin} onChange={e => {
+              setPriceMin(e.target.value);
+              const timer = setTimeout(() => {
+                if (e.target.value) {
+                  searchParams.set('minPrice', e.target.value);
+                } else {
+                  searchParams.delete('minPrice');
+                }
+                searchParams.delete('page');
+                setSearchParams(searchParams);
+              }, 500);
+              return () => clearTimeout(timer);
+            }} className="w-full px-3 py-2 border-2 border-black/20 text-sm focus:outline-none focus:border-[#C8102E]" />
+                <span className="text-black/40">—</span>
+                <input type="number" placeholder="До" value={priceMax} onChange={e => {
+              setPriceMax(e.target.value);
+              const timer = setTimeout(() => {
+                if (e.target.value) {
+                  searchParams.set('maxPrice', e.target.value);
+                } else {
+                  searchParams.delete('maxPrice');
+                }
+                searchParams.delete('page');
+                setSearchParams(searchParams);
+              }, 500);
+              return () => clearTimeout(timer);
+            }} className="w-full px-3 py-2 border-2 border-black/20 text-sm focus:outline-none focus:border-[#C8102E]" />
+              </div>
+            </div>}
         </div>
       </div>
 
       {/* Reset */}
-      <div className="p-6">
-        <button className="text-sm text-gray-600 hover:text-black transition-colors tracking-wide">
+      <div className="pt-6">
+        <button onClick={clearFilters} className="text-sm text-[#C8102E] hover:underline font-medium tracking-wide uppercase">
           Сбросить все фильтры
         </button>
       </div>

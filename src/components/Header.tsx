@@ -1,14 +1,30 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { SearchIcon, ShoppingBagIcon, MenuIcon, XIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
+import { publicApi } from '../services/publicApi';
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [logo, setLogo] = useState<{
+    logoUrl: string;
+    logoDarkUrl: string | null;
+  } | null>(null);
   const {
     totalItems
   } = useCart();
+  useEffect(() => {
+    loadLogo();
+  }, []);
+  const loadLogo = async () => {
+    try {
+      const data = await publicApi.getSiteLogo();
+      setLogo(data);
+    } catch (error) {
+      console.error('Error loading logo:', error);
+    }
+  };
   return <>
       {/* Promo Banner */}
       <div className="bg-black text-white text-center py-2 sm:py-3 px-4 overflow-hidden relative">
@@ -30,9 +46,9 @@ export function Header() {
 
             {/* Logo */}
             <Link to="/" className="flex-shrink-0 group">
-              <div className="text-lg sm:text-xl lg:text-2xl tracking-[0.15em] sm:tracking-[0.2em] lg:tracking-[0.25em] font-bold transition-all duration-500 group-hover:tracking-[0.2em] sm:group-hover:tracking-[0.25em] lg:group-hover:tracking-[0.3em] group-hover:text-[#C8102E]">
-                ORIENT
-              </div>
+              {logo?.logoUrl ? <img src={logo.logoUrl} alt="ORIENT" className="h-8 sm:h-10 lg:h-12 object-contain transition-all duration-500 group-hover:opacity-80" /> : <div className="text-lg sm:text-xl lg:text-2xl tracking-[0.15em] sm:tracking-[0.2em] lg:tracking-[0.25em] font-bold transition-all duration-500 group-hover:tracking-[0.2em] sm:group-hover:tracking-[0.25em] lg:group-hover:tracking-[0.3em] group-hover:text-[#C8102E]">
+                  ORIENT
+                </div>}
             </Link>
 
             {/* Desktop Navigation */}
@@ -73,8 +89,10 @@ export function Header() {
             <div className="lg:hidden fixed inset-y-0 left-0 w-[280px] sm:w-[320px] bg-white z-50 shadow-2xl animate-slide-in-left overflow-y-auto">
               <div className="p-6 space-y-8">
                 <div className="flex items-center justify-between pb-6 border-b border-black/10">
-                  <Link to="/" onClick={() => setMobileMenuOpen(false)} className="text-xl tracking-[0.2em] font-bold">
-                    ORIENT
+                  <Link to="/" onClick={() => setMobileMenuOpen(false)}>
+                    {logo?.logoUrl ? <img src={logo.logoUrl} alt="ORIENT" className="h-8 object-contain" /> : <div className="text-xl tracking-[0.2em] font-bold">
+                        ORIENT
+                      </div>}
                   </Link>
                   <button onClick={() => setMobileMenuOpen(false)} className="p-2 hover:text-[#C8102E] transition-colors" aria-label="Закрыть меню">
                     <XIcon className="w-6 h-6" strokeWidth={2} />

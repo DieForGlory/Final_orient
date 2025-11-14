@@ -1,44 +1,57 @@
-# Orient Watch - Backend API
+# 🚀 Orient Watch - Backend API
 
-## 🐍 Python + FastAPI + SQLite
+FastAPI backend для интернет-магазина часов Orient.
 
-Backend API для сайта Orient Watch с полным функционалом управления товарами, заказами и контентом.
+## 📋 Требования
 
----
+- Python 3.10+
+- pip
 
-## 📦 Установка и запуск
+## 🔧 Установка
 
-### 1. Установите Python
-
-Убедитесь что у вас установлен Python 3.9 или выше:
-
-```bash
-python --version
-# или
-python3 --version
-```
-
-### 2. Создайте виртуальное окружение
+### 1. Создайте виртуальное окружение
 
 ```bash
-# Перейдите в папку backend
-cd backend
-
-# Создайте виртуальное окружение
 python -m venv venv
 
-# Активируйте его
-# Windows:
-venv\Scripts\activate
-
-# macOS/Linux:
+# macOS/Linux
 source venv/bin/activate
+
+# Windows
+venv\Scripts\activate
 ```
 
-### 3. Установите зависимости
+### 2. Установите зависимости
 
 ```bash
 pip install -r requirements.txt
+```
+
+### 3. Настройте переменные окружения
+
+```bash
+# Скопируйте пример
+cp .env.example .env
+
+# Отредактируйте .env файл
+nano .env  # или любой другой редактор
+```
+
+**Важные переменные:**
+
+```env
+# Секретный ключ для JWT (ОБЯЗАТЕЛЬНО измените в production!)
+SECRET_KEY=your-super-secret-key-change-this-in-production
+
+# CORS - укажите URL вашего frontend (можно несколько через запятую)
+CORS_ORIGINS=http://localhost:5173,http://localhost:3000
+
+# База данных
+DATABASE_URL=sqlite:///./orient.db
+
+# Админ по умолчанию
+ADMIN_EMAIL=admin@orient.uz
+ADMIN_PASSWORD=admin123
 ```
 
 ### 4. Инициализируйте базу данных
@@ -48,378 +61,222 @@ python init_db.py
 ```
 
 Это создаст:
-- ✅ SQLite базу данных `orient.db`
-- ✅ Все необходимые таблицы
-- ✅ Админ пользователя
+- ✅ Все таблицы БД
+- ✅ Админ пользователя (admin@orient.uz / admin123)
 - ✅ Тестовые товары и коллекции
-- ✅ Дефолтный контент
+- ✅ Контент для главной страницы
 
-**Credentials:**
-- Email: `admin@orient.uz`
-- Password: `admin123`
+## 🚀 Запуск
 
-### 5. Запустите сервер
+### **Development (разработка):**
 
 ```bash
-python main.py
-```
-
-Или с помощью uvicorn:
-
-```bash
+# Способ 1: С автоперезагрузкой (РЕКОМЕНДУЕТСЯ)
 uvicorn main:app --reload --port 8000
-```
 
-### 6. Проверьте работу
-
-Откройте в браузере:
-- API Docs: http://localhost:8000/docs
-- Health Check: http://localhost:8000/health
-
----
-
-## 🔌 Подключение Frontend
-
-### Шаг 1: Настройте .env в frontend
-
-Создайте файл `.env` в корне frontend проекта:
-
-```env
-VITE_API_URL=http://localhost:8000
-```
-
-### Шаг 2: Убедитесь что backend запущен
-
-```bash
-# В папке backend
+# Способ 2: Через python
 python main.py
 ```
 
-Должно появиться:
-```
-INFO:     Uvicorn running on http://0.0.0.0:8000
-INFO:     Application startup complete.
-```
-
-### Шаг 3: Запустите frontend
+### **Production (продакшн):**
 
 ```bash
-# В корне проекта (не в папке backend!)
-npm run dev
+# Простой запуск
+uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
+
+# С Gunicorn (РЕКОМЕНДУЕТСЯ для production)
+gunicorn main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
 ```
 
-### Шаг 4: Проверьте интеграцию
+**📚 Подробнее:** См. [START_COMMANDS.md](./START_COMMANDS.md)
 
-1. Откройте http://localhost:5173
-2. Главная страница должна загрузить данные из API
-3. Откройте DevTools → Network → XHR
-4. Должны быть запросы к http://localhost:8000
+Backend запустится на `http://localhost:8000`
 
-### Шаг 5: Войдите в админку
-
-1. Откройте http://localhost:5173/admin/login
-2. Введите:
-   - Email: `admin@orient.uz`
-   - Password: `admin123`
-3. Вы должны попасть в админ панель
-
----
+**API документация:**
+- Swagger UI: http://localhost:8000/docs
+- ReDoc: http://localhost:8000/redoc
 
 ## 📁 Структура проекта
 
 ```
 backend/
-├── main.py                 # Главный файл приложения
-├── database.py             # Модели БД и подключение
-├── auth.py                 # JWT аутентификация
-├── schemas.py              # Pydantic схемы
-├── init_db.py              # Инициализация БД
-├── requirements.txt        # Зависимости Python
-├── routes/                 # API роуты
-│   ├── admin.py           # Админ endpoints
-│   ├── products.py        # Товары
-│   ├── collections.py     # Коллекции
-│   ├── orders.py          # Заказы
-│   ├── content.py         # Контент
-│   └── upload.py          # Загрузка файлов
-├── uploads/               # Загруженные изображения
-└── orient.db              # SQLite база данных
+├── routes/              # API endpoints
+│   ├── admin.py        # Авторизация и статистика
+│   ├── products.py     # CRUD товаров
+│   ├── collections.py  # CRUD коллекций
+│   ├── orders.py       # Управление заказами
+│   ├── bookings.py     # Записи в бутик
+│   ├── content.py      # Управление контентом
+│   └── upload.py       # Загрузка изображений
+├── database.py         # SQLAlchemy модели
+├── schemas.py          # Pydantic схемы
+├── auth.py             # JWT авторизация
+├── main.py             # Главный файл приложения
+├── init_db.py          # Инициализация БД
+├── .env                # Переменные окружения (НЕ коммитить!)
+├── .env.example        # Пример переменных окружения
+└── requirements.txt    # Python зависимости
 ```
 
----
+## 🔐 Переменные окружения
 
-## 🔑 API Endpoints
+### **Обязательные:**
 
-### Публичные (без авторизации)
+| Переменная | Описание | Пример |
+|------------|----------|--------|
+| `SECRET_KEY` | Секретный ключ для JWT | `your-secret-key-here` |
+| `CORS_ORIGINS` | Разрешенные frontend URLs | `http://localhost:5173,https://yourdomain.com` |
 
-**Products:**
-- `GET /api/products` - Список товаров
-- `GET /api/products/{id}` - Товар по ID
+### **Опциональные:**
 
-**Collections:**
-- `GET /api/collections` - Список коллекций
-- `GET /api/collections/{id}` - Коллекция по ID
-- `GET /api/collections/{id}/products` - Товары коллекции
+| Переменная | Описание | По умолчанию |
+|------------|----------|--------------|
+| `DATABASE_URL` | URL базы данных | `sqlite:///./orient.db` |
+| `ALGORITHM` | Алгоритм JWT | `HS256` |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | Время жизни токена | `30` |
+| `UPLOAD_DIR` | Папка для загрузок | `uploads` |
+| `MAX_UPLOAD_SIZE` | Макс. размер файла | `5242880` (5MB) |
+| `PORT` | Порт сервера | `8000` |
 
-**Content:**
-- `GET /api/content/hero` - Hero секция
-- `GET /api/content/promo-banner` - Промо баннер
-- `GET /api/content/featured-watches` - Избранные часы
-- `GET /api/content/heritage` - Heritage секция
-
-**Orders:**
-- `POST /api/orders` - Создать заказ
-
-### Админские (требуют авторизации)
-
-**Auth:**
-- `POST /api/admin/login` - Вход
-
-**Dashboard:**
-- `GET /api/admin/stats` - Статистика
-- `GET /api/admin/orders/recent` - Последние заказы
-
-**Products:**
-- `POST /api/admin/products` - Создать товар
-- `PUT /api/admin/products/{id}` - Обновить товар
-- `DELETE /api/admin/products/{id}` - Удалить товар
-
-**Collections:**
-- `POST /api/admin/collections` - Создать коллекцию
-- `PUT /api/admin/collections/{id}` - Обновить коллекцию
-- `DELETE /api/admin/collections/{id}` - Удалить коллекцию
-
-**Orders:**
-- `GET /api/admin/orders` - Список заказов
-- `GET /api/admin/orders/{id}` - Заказ по ID
-- `PUT /api/admin/orders/{id}/status` - Обновить статус
-
-**Content:**
-- `PUT /api/admin/content/hero` - Обновить Hero
-- `PUT /api/admin/content/promo-banner` - Обновить баннер
-- `PUT /api/admin/content/featured-watches` - Обновить избранные
-- `PUT /api/admin/content/heritage` - Обновить Heritage
-
-**Upload:**
-- `POST /api/admin/upload` - Загрузить изображение
-
----
-
-## 🗄️ База данных
-
-### Таблицы
-
-**users** - Пользователи
-- id, email, password_hash, name, role, created_at
-
-**products** - Товары
-- id, name, collection, price, image, images, description, features, specs, in_stock, stock_quantity, sku, created_at, updated_at
-
-**collections** - Коллекции
-- id, name, description, image, watch_count, number, active, created_at
-
-**orders** - Заказы
-- id, order_number, user_id, customer_data, items, subtotal, shipping, total, status, payment_method, delivery_method, delivery_address, notes, created_at, updated_at
-
-**content_hero** - Hero секция
-- id, title, subtitle, image, cta_text, cta_link, updated_at
-
-**content_promo_banner** - Промо баннер
-- id, text, code, active, background_color, text_color, highlight_color, updated_at
-
-**content_featured_watches** - Избранные часы
-- id, product_id, order_num, is_new
-
-**content_heritage** - Heritage секция
-- id, title, subtitle, description, cta_text, cta_link, years_text, updated_at
-
-### Просмотр БД
-
-Используйте любой SQLite клиент:
-- DB Browser for SQLite (https://sqlitebrowser.org/)
-- VS Code extension: SQLite Viewer
-- Командная строка: `sqlite3 orient.db`
-
----
-
-## 🔧 Настройка
-
-### Изменить порт
-
-В `main.py`:
-
-```python
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
-    # Измените port=8000 на нужный
-```
-
-### Изменить SECRET_KEY
-
-В `auth.py`:
-
-```python
-SECRET_KEY = "your-secret-key-change-in-production-use-env-variable"
-# Замените на свой секретный ключ
-```
-
-**Для production используйте переменные окружения!**
-
-### Добавить CORS origins
-
-В `main.py`:
-
-```python
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "https://yourdomain.com",  # Добавьте свой домен
-    ],
-    # ...
-)
-```
-
----
-
-## 🧪 Тестирование
-
-### Тест через Swagger UI
-
-1. Откройте http://localhost:8000/docs
-2. Попробуйте любой endpoint
-3. Для админских endpoints:
-   - Сначала вызовите `POST /api/admin/login`
-   - Скопируйте token из ответа
-   - Нажмите "Authorize" вверху страницы
-   - Вставьте token
-   - Теперь можете вызывать админские endpoints
-
-### Тест через curl
-
-```bash
-# Получить товары
-curl http://localhost:8000/api/products
-
-# Логин
-curl -X POST http://localhost:8000/api/admin/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"admin@orient.uz","password":"admin123"}'
-
-# Создать товар (замените YOUR_TOKEN)
-curl -X POST http://localhost:8000/api/admin/products \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Test Watch",
-    "collection": "SPORTS",
-    "price": 50000,
-    "inStock": true,
-    "stockQuantity": 10
-  }'
-```
-
----
-
-## 🚀 Production Deployment
-
-### 1. Используйте переменные окружения
-
-Создайте `.env` файл:
+### **Для production:**
 
 ```env
-SECRET_KEY=your-super-secret-production-key
-DATABASE_URL=sqlite:///./orient_production.db
+# Используйте PostgreSQL вместо SQLite
+DATABASE_URL=postgresql://user:password@localhost/orient_db
+
+# Укажите реальный домен frontend
 CORS_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
+
+# Сгенерируйте сильный секретный ключ
+SECRET_KEY=$(openssl rand -hex 32)
 ```
 
-### 2. Используйте Gunicorn
+## 📚 API Endpoints
+
+### **Public (без авторизации):**
+
+```
+GET    /api/products                    - Список товаров
+GET    /api/products/{id}               - Товар по ID
+GET    /api/collections                 - Список коллекций
+GET    /api/collections/{id}            - Коллекция по ID
+POST   /api/orders                      - Создать заказ
+POST   /api/bookings                    - Создать запись в бутик
+GET    /api/content/hero                - Hero контент
+GET    /api/test                        - Тестовый endpoint
+```
+
+### **Admin (требуют JWT токен):**
+
+```
+POST   /api/admin/login                 - Вход в админку
+GET    /api/admin/stats                 - Статистика
+GET    /api/admin/products              - Управление товарами
+GET    /api/admin/orders                - Управление заказами
+GET    /api/admin/bookings              - Управление записями
+POST   /api/admin/upload                - Загрузка изображений
+```
+
+Полная документация: http://localhost:8000/docs
+
+## 🔧 Разработка
+
+### Создание миграций
 
 ```bash
-pip install gunicorn
-
-gunicorn main:app \
-  --workers 4 \
-  --worker-class uvicorn.workers.UvicornWorker \
-  --bind 0.0.0.0:8000
+# После изменения моделей в database.py
+python migrate_bookings.py
 ```
 
-### 3. Настройте Nginx
-
-```nginx
-server {
-    listen 80;
-    server_name api.yourdomain.com;
-
-    location / {
-        proxy_pass http://127.0.0.1:8000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
-}
-```
-
-### 4. Используйте HTTPS
-
-Установите SSL сертификат (Let's Encrypt):
+### Тестирование API
 
 ```bash
-sudo certbot --nginx -d api.yourdomain.com
-```
+# Используйте Swagger UI
+open http://localhost:8000/docs
 
----
+# Или curl
+curl http://localhost:8000/api/products
+curl http://localhost:8000/api/test
+```
 
 ## 🐛 Troubleshooting
 
-### Ошибка: ModuleNotFoundError
+### Backend не запускается
 
 ```bash
-# Убедитесь что виртуальное окружение активировано
-source venv/bin/activate  # macOS/Linux
-venv\Scripts\activate     # Windows
+# Проверьте виртуальное окружение
+which python  # должен показать путь к venv
 
 # Переустановите зависимости
 pip install -r requirements.txt
 ```
 
-### Ошибка: Database is locked
+### CORS ошибки
 
-SQLite не поддерживает много одновременных записей. Для production используйте PostgreSQL или MySQL.
+Проверьте `.env` файл:
+```env
+# Убедитесь, что URL frontend указан правильно
+CORS_ORIGINS=http://localhost:5173
+```
 
-### Ошибка: CORS
+См. [CORS_FIX_GUIDE.md](../CORS_FIX_GUIDE.md)
 
-Добавьте ваш frontend URL в `allow_origins` в `main.py`
+### База данных пустая
 
-### Ошибка: 401 Unauthorized
+```bash
+# Пересоздайте БД
+rm orient.db
+python init_db.py
+```
 
-- Проверьте что токен передается в заголовке `Authorization: Bearer TOKEN`
-- Проверьте что токен не истек (24 часа)
-- Попробуйте залогиниться заново
+См. [INIT_DB_GUIDE.md](./INIT_DB_GUIDE.md)
+
+## 📝 Логи
+
+Backend выводит логи в консоль:
+```
+🌐 CORS enabled for origins: ['http://localhost:5173', 'http://localhost:3000']
+🚀 Starting server on http://0.0.0.0:8000
+📚 API docs: http://localhost:8000/docs
+INFO:     Uvicorn running on http://0.0.0.0:8000
+INFO:     127.0.0.1:xxxxx - "GET /api/products HTTP/1.1" 200 OK
+```
+
+## 🚀 Production Deployment
+
+### 1. Измените переменные окружения
+
+```env
+SECRET_KEY=$(openssl rand -hex 32)
+DATABASE_URL=postgresql://user:password@host/db
+CORS_ORIGINS=https://yourdomain.com
+```
+
+### 2. Используйте production сервер
+
+```bash
+# Gunicorn + Uvicorn workers (РЕКОМЕНДУЕТСЯ)
+gunicorn main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
+
+# Или uvicorn с несколькими workers
+uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
+```
+
+### 3. Настройте HTTPS
+
+Используйте Nginx или Caddy как reverse proxy.
+
+**Подробнее:** См. [START_COMMANDS.md](./START_COMMANDS.md)
+
+## 📞 Поддержка
+
+Если возникли вопросы:
+1. Проверьте логи backend
+2. Проверьте `.env` файл
+3. Проверьте Swagger документацию: http://localhost:8000/docs
+4. См. [CORS_FIX_GUIDE.md](../CORS_FIX_GUIDE.md)
+5. См. [START_COMMANDS.md](./START_COMMANDS.md)
 
 ---
 
-## 📚 Дополнительная документация
-
-- FastAPI: https://fastapi.tiangolo.com/
-- SQLAlchemy: https://www.sqlalchemy.org/
-- Pydantic: https://docs.pydantic.dev/
-
----
-
-## ✅ Чеклист запуска
-
-- [ ] Python 3.9+ установлен
-- [ ] Виртуальное окружение создано и активировано
-- [ ] Зависимости установлены (`pip install -r requirements.txt`)
-- [ ] База данных инициализирована (`python init_db.py`)
-- [ ] Backend запущен (`python main.py`)
-- [ ] Swagger UI открывается (http://localhost:8000/docs)
-- [ ] Frontend `.env` настроен (`VITE_API_URL=http://localhost:8000`)
-- [ ] Frontend запущен (`npm run dev`)
-- [ ] Главная страница загружается
-- [ ] Админка работает (логин: admin@orient.uz / admin123)
-
----
-
-**Готово! Backend полностью настроен и готов к работе!** 🎉
+**Создано с ❤️ для Orient Watch**

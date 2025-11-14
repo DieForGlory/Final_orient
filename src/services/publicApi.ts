@@ -37,13 +37,18 @@ class PublicApiService {
     if (params?.limit) queryParams.append('limit', params.limit.toString());
     if (params?.search) queryParams.append('search', params.search);
     if (params?.collection) queryParams.append('collection', params.collection);
-    if (params?.minPrice) queryParams.append('min_price', params.minPrice.toString());
-    if (params?.maxPrice) queryParams.append('max_price', params.maxPrice.toString());
+    if (params?.minPrice) queryParams.append('minPrice', params.minPrice.toString());
+    if (params?.maxPrice) queryParams.append('maxPrice', params.maxPrice.toString());
     const query = queryParams.toString();
     return this.request(`/api/products${query ? `?${query}` : ''}`);
   }
   getProduct(id: string) {
     return this.request(`/api/products/${id}`);
+  }
+
+  // Filters
+  getFilters() {
+    return this.request('/api/products/filters');
   }
 
   // Collections
@@ -87,6 +92,9 @@ class PublicApiService {
   }
 
   // Content
+  getSiteLogo() {
+    return this.request('/api/content/logo');
+  }
   getHeroContent() {
     return this.request('/api/content/hero');
   }

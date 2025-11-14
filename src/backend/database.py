@@ -6,6 +6,7 @@ from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, T
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from datetime import datetime
+import json
 
 # Database URL
 DATABASE_URL = "sqlite:///./orient.db"
@@ -59,6 +60,13 @@ class Product(Base):
     stock_quantity = Column(Integer, default=0)
     sku = Column(String, unique=True)
     is_featured = Column(Boolean, default=False)
+    
+    # Filter fields
+    movement = Column(String, index=True)  # automatic, mechanical, quartz
+    case_material = Column(String, index=True)  # steel, titanium, gold
+    dial_color = Column(String, index=True)  # black, blue, white, green, etc
+    water_resistance = Column(String, index=True)  # 200m, 100m, 50m
+    
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -77,6 +85,10 @@ class Product(Base):
             "stockQuantity": self.stock_quantity,
             "sku": self.sku,
             "isFeatured": self.is_featured,
+            "movement": self.movement,
+            "caseMaterial": self.case_material,
+            "dialColor": self.dial_color,
+            "waterResistance": self.water_resistance,
             "createdAt": self.created_at.isoformat() if self.created_at else None,
             "updatedAt": self.updated_at.isoformat() if self.updated_at else None,
         }
@@ -89,6 +101,17 @@ class Collection(Base):
     description = Column(Text)
     image = Column(String)
     number = Column(String)
+    active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class FilterOption(Base):
+    __tablename__ = "filter_options"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    category = Column(String, nullable=False, index=True)  # movement, case_material, dial_color, water_resistance
+    label = Column(String, nullable=False)
+    value = Column(String, nullable=False)
+    order = Column(Integer, default=0)
     active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -127,6 +150,14 @@ class Booking(Base):
     status = Column(String, default="pending")  # pending, confirmed, completed, cancelled
     boutique = Column(String, default="Orient Ташкент")
     created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class ContentSiteLogo(Base):
+    __tablename__ = "content_site_logo"
+    
+    id = Column(Integer, primary_key=True, default=1)
+    logo_url = Column(String, nullable=False)
+    logo_dark_url = Column(String, nullable=True)  # For dark backgrounds
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 class ContentHero(Base):

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { FilterSidebar } from '../components/FilterSidebar';
 import { ProductCard } from '../components/ProductCard';
 import { SlidersHorizontalIcon, XIcon, GridIcon, ListIcon } from 'lucide-react';
@@ -50,6 +50,23 @@ export function Catalog() {
       setLoading(false);
     }
   };
+  // Sort products client-side
+  const sortedProducts = useMemo(() => {
+    const sorted = [...products];
+    switch (sortBy) {
+      case 'price-asc':
+        return sorted.sort((a, b) => a.price - b.price);
+      case 'price-desc':
+        return sorted.sort((a, b) => b.price - a.price);
+      case 'name':
+        return sorted.sort((a, b) => a.name.localeCompare(b.name));
+      case 'newest':
+        return sorted.reverse();
+      case 'popular':
+      default:
+        return sorted;
+    }
+  }, [products, sortBy]);
   const handlePageChange = (page: number) => {
     searchParams.set('page', page.toString());
     setSearchParams(searchParams);
@@ -156,7 +173,9 @@ export function Catalog() {
             {/* Active Filters */}
             {activeFilters.length > 0 && <div className="flex flex-wrap gap-2 sm:gap-3 mb-6 sm:mb-8">
                 {activeFilters.map(([key, value]) => <button key={key} onClick={() => removeFilter(key)} className="flex items-center space-x-2 bg-black text-white px-3 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs tracking-[0.15em] font-medium hover:bg-[#C8102E] transition-colors">
-                    <span>{value}</span>
+                    <span className="uppercase">
+                      {key === 'collection' ? value : key === 'minPrice' ? `От ${value}₽` : key === 'maxPrice' ? `До ${value}₽` : value}
+                    </span>
                     <XIcon className="w-3 h-3" strokeWidth={2} />
                   </button>)}
                 <button onClick={clearFilters} className="text-[10px] sm:text-xs tracking-[0.15em] font-medium text-[#C8102E] hover:underline uppercase">
@@ -167,14 +186,14 @@ export function Catalog() {
             {/* Products Grid */}
             {loading ? <div className="flex items-center justify-center py-20">
                 <div className="w-12 h-12 border-4 border-[#C8102E] border-t-transparent rounded-full animate-spin"></div>
-              </div> : products.length === 0 ? <div className="text-center py-20">
+              </div> : sortedProducts.length === 0 ? <div className="text-center py-20">
                 <p className="text-xl text-black/60 mb-4">Товары не найдены</p>
                 <button onClick={clearFilters} className="text-[#C8102E] hover:underline font-medium">
                   Сбросить фильтры
                 </button>
               </div> : <>
                 <div className={`grid gap-6 sm:gap-8 lg:gap-12 ${viewMode === 'grid' ? 'grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}`}>
-                  {products.map((product, index) => <ProductCard key={product.id} {...product} index={index} />)}
+                  {sortedProducts.map((product, index) => <ProductCard key={product.id} {...product} index={index} />)}
                 </div>
 
                 {/* Pagination */}
@@ -187,7 +206,8 @@ export function Catalog() {
                         </button>)}
                     </div>
                     <p className="text-xs sm:text-sm text-black/60">
-                      Показано {products.length} из {pagination.total} моделей
+                      Показано {sortedProducts.length} из {pagination.total}{' '}
+                      моделей
                     </p>
                   </div>}
               </>}
@@ -199,7 +219,7 @@ export function Catalog() {
       {showFilters && <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowFilters(false)}></div>
           <div className="absolute right-0 top-0 bottom-0 w-full max-w-md bg-white overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-black/10 px-6 sm:px-8 py-4 sm:py-6 flex items-center justify-between">
+            <div className="sticky top-0 bg-white border-b border-black/10 px-6 sm:px-8 py-4 sm:py-6 flex items-center justify-between z-10">
               <h2 className="text-lg sm:text-xl font-bold tracking-tight uppercase">
                 Фильтры
               </h2>
@@ -212,7 +232,7 @@ export function Catalog() {
             </div>
             <div className="sticky bottom-0 bg-white border-t border-black/10 p-6 sm:p-8">
               <button onClick={() => setShowFilters(false)} className="w-full bg-[#C8102E] hover:bg-[#A00D24] text-white py-3 sm:py-4 text-xs sm:text-sm tracking-[0.2em] font-semibold transition-all duration-500 uppercase">
-                Применить фильтры
+                Закрыть
               </button>
             </div>
           </div>

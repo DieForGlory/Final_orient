@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PlusIcon, SearchIcon, EditIcon, TrashIcon, EyeIcon } from 'lucide-react';
+import { api } from '../../services/api';
 interface Product {
   id: string;
   name: string;
@@ -20,14 +21,8 @@ export function AdminProducts() {
   }, []);
   const fetchProducts = async () => {
     try {
-      // TODO: Replace with real API call
-      const response = await fetch('/api/admin/products', {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('adminToken')}`
-        }
-      });
-      const data = await response.json();
-      setProducts(data);
+      const response = await api.getProducts();
+      setProducts(response.data || []);
     } catch (error) {
       console.error('Error fetching products:', error);
     } finally {
@@ -37,13 +32,7 @@ export function AdminProducts() {
   const handleDelete = async (id: string) => {
     if (!confirm('Вы уверены, что хотите удалить этот товар?')) return;
     try {
-      // TODO: Replace with real API call
-      await fetch(`/api/admin/products/${id}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('adminToken')}`
-        }
-      });
+      await api.deleteProduct(id);
       setProducts(products.filter(p => p.id !== id));
     } catch (error) {
       console.error('Error deleting product:', error);
@@ -122,7 +111,9 @@ export function AdminProducts() {
               {filteredProducts.length > 0 ? filteredProducts.map(product => <tr key={product.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-4">
-                        <img src={product.image} alt={product.name} className="w-16 h-16 object-cover bg-gray-100" />
+                        <img src={product.image} alt={product.name} className="w-16 h-16 object-cover bg-gray-100" onError={e => {
+                    e.currentTarget.src = 'https://via.placeholder.com/64?text=No+Image';
+                  }} />
                         <div>
                           <p className="font-semibold text-sm">
                             {product.name}

@@ -1,7 +1,7 @@
 """
 File upload routes
 """
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Request
 from auth import require_admin
 import os
 import uuid
@@ -13,8 +13,9 @@ UPLOAD_DIR = "uploads"
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
 
-@router.post("/admin/upload")
+@router.post("/api/admin/upload")
 async def upload_file(
+    request: Request,
     file: UploadFile = File(...),
     current_user = Depends(require_admin)
 ):
@@ -45,8 +46,11 @@ async def upload_file(
     with open(file_path, "wb") as f:
         f.write(contents)
     
-    # Return URL
-    file_url = f"/uploads/{unique_filename}"
+    # Get base URL from request
+    base_url = str(request.base_url).rstrip('/')
+    
+    # Return full URL
+    file_url = f"{base_url}/uploads/{unique_filename}"
     
     return {
         "url": file_url,

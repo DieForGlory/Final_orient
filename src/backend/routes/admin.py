@@ -4,6 +4,7 @@ Admin routes - authentication and dashboard
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+import json
 
 from database import get_db, User, Product, Order
 from schemas import LoginRequest, LoginResponse
@@ -11,7 +12,7 @@ from auth import verify_password, create_access_token, require_admin
 
 router = APIRouter()
 
-@router.post("/login", response_model=LoginResponse)
+@router.post("/api/admin/login", response_model=LoginResponse)
 async def admin_login(request: LoginRequest, db: Session = Depends(get_db)):
     """Admin login"""
     # Find user
@@ -43,7 +44,7 @@ async def admin_login(request: LoginRequest, db: Session = Depends(get_db)):
         }
     }
 
-@router.get("/stats")
+@router.get("/api/admin/stats")
 async def get_stats(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin)
@@ -78,7 +79,7 @@ async def get_stats(
         "completedOrders": completed_orders
     }
 
-@router.get("/orders/recent")
+@router.get("/api/admin/orders/recent")
 async def get_recent_orders(
     limit: int = 10,
     db: Session = Depends(get_db),
@@ -88,8 +89,6 @@ async def get_recent_orders(
     orders = db.query(Order).order_by(
         Order.created_at.desc()
     ).limit(limit).all()
-    
-    import json
     
     result = []
     for order in orders:

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LockIcon, MailIcon, EyeIcon, EyeOffIcon } from 'lucide-react';
+const API_BASE_URL = import.meta.env?.VITE_API_URL || 'http://localhost:8000';
 export function AdminLogin() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
@@ -13,8 +14,7 @@ export function AdminLogin() {
     setError('');
     setLoading(true);
     try {
-      // TODO: Replace with real API call
-      const response = await fetch('/api/admin/login', {
+      const response = await fetch(`${API_BASE_URL}/api/admin/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -25,7 +25,8 @@ export function AdminLogin() {
         })
       });
       if (!response.ok) {
-        throw new Error('Неверный email или пароль');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || 'Неверный email или пароль');
       }
       const data = await response.json();
       // Save token
@@ -34,6 +35,7 @@ export function AdminLogin() {
       // Redirect to dashboard
       navigate('/admin/dashboard');
     } catch (err) {
+      console.error('Login error:', err);
       setError(err instanceof Error ? err.message : 'Ошибка входа');
     } finally {
       setLoading(false);

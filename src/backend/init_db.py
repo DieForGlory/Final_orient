@@ -58,6 +58,7 @@ def create_default_data():
         # Create sample products
         products = [
             Product(
+                id="kamasu-automatic-diver",
                 name="Kamasu Automatic Diver",
                 collection="SPORTS",
                 price=45900,
@@ -83,9 +84,11 @@ def create_default_data():
                 }),
                 in_stock=True,
                 stock_quantity=15,
-                sku="RA-AA0004E19B"
+                sku="RA-AA0004E19B",
+                is_featured=True
             ),
             Product(
+                id="bambino-classic",
                 name="Bambino Classic",
                 collection="CLASSIC",
                 price=32900,
@@ -106,9 +109,11 @@ def create_default_data():
                 }),
                 in_stock=True,
                 stock_quantity=20,
-                sku="RA-AC0001S10B"
+                sku="RA-AC0001S10B",
+                is_featured=True
             ),
             Product(
+                id="mako-iii-automatic",
                 name="Mako III Automatic",
                 collection="SPORTS",
                 price=41900,
@@ -128,9 +133,11 @@ def create_default_data():
                 }),
                 in_stock=True,
                 stock_quantity=10,
-                sku="RA-AA0003L19B"
+                sku="RA-AA0003L19B",
+                is_featured=True
             ),
             Product(
+                id="sun-moon-classic",
                 name="Sun & Moon Classic",
                 collection="CLASSIC",
                 price=67900,
@@ -150,9 +157,11 @@ def create_default_data():
                 }),
                 in_stock=True,
                 stock_quantity=8,
-                sku="RA-AK0305S10B"
+                sku="RA-AK0305S10B",
+                is_featured=True
             ),
             Product(
+                id="ray-ii-automatic",
                 name="Ray II Automatic",
                 collection="SPORTS",
                 price=38900,
@@ -170,9 +179,11 @@ def create_default_data():
                 }),
                 in_stock=True,
                 stock_quantity=12,
-                sku="RA-AA0002L19B"
+                sku="RA-AA0002L19B",
+                is_featured=False
             ),
             Product(
+                id="defender-chronograph",
                 name="Defender Chronograph",
                 collection="CONTEMPORARY",
                 price=52900,
@@ -192,7 +203,8 @@ def create_default_data():
                 }),
                 in_stock=True,
                 stock_quantity=18,
-                sku="RA-KV0001L19B"
+                sku="RA-KV0001L19B",
+                is_featured=True
             )
         ]
         
@@ -237,12 +249,21 @@ def create_default_data():
         
         db.commit()
         print("✅ Database initialized successfully!")
-        print("\nDefault credentials:")
-        print("Email: admin@orient.uz")
+        print("\n" + "="*50)
+        print("DEFAULT CREDENTIALS:")
+        print("="*50)
+        print("Email:    admin@orient.uz")
         print("Password: admin123")
+        print("="*50)
+        print("\n✅ 6 products created")
+        print("✅ 3 collections created")
+        print("✅ Default content created")
+        print("\nYou can now start the server with: python main.py")
         
     except Exception as e:
         print(f"❌ Error: {e}")
+        import traceback
+        traceback.print_exc()
         db.rollback()
     finally:
         db.close()
@@ -250,5 +271,5 @@ def create_default_data():
 if __name__ == "__main__":
     print("Initializing database...")
     init_db()
-    print("Creating default data...")
+    print("\nCreating default data...")
     create_default_data()
