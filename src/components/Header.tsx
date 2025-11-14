@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
-import { SearchIcon, UserIcon, ShoppingBagIcon, MenuIcon, XIcon } from 'lucide-react';
+import { SearchIcon, ShoppingBagIcon, MenuIcon, XIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useCart } from '../contexts/CartContext';
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const {
+    totalItems
+  } = useCart();
   return <>
       {/* Promo Banner */}
       <div className="bg-black text-white text-center py-2 sm:py-3 px-4 overflow-hidden relative">
@@ -36,7 +40,7 @@ export function Header() {
               <Link to="/catalog" className="nav-link text-sm tracking-[0.15em] font-medium uppercase">
                 Каталог
               </Link>
-              <Link to="/collection/sports" className="nav-link text-sm tracking-[0.15em] font-medium uppercase">
+              <Link to="/collections" className="nav-link text-sm tracking-[0.15em] font-medium uppercase">
                 Коллекции
               </Link>
               <Link to="/history" className="nav-link text-sm tracking-[0.15em] font-medium uppercase">
@@ -52,14 +56,11 @@ export function Header() {
               <button onClick={() => setSearchOpen(true)} className="p-2 hover:text-[#C8102E] transition-all duration-500 hover:scale-110" aria-label="Поиск">
                 <SearchIcon className="w-5 h-5" strokeWidth={2} />
               </button>
-              <button className="hidden sm:block p-2 hover:text-[#C8102E] transition-all duration-500 hover:scale-110" aria-label="Войти">
-                <UserIcon className="w-5 h-5" strokeWidth={2} />
-              </button>
               <Link to="/cart" className="p-2 hover:text-[#C8102E] transition-all duration-500 hover:scale-110 relative group" aria-label="Корзина">
                 <ShoppingBagIcon className="w-5 h-5" strokeWidth={2} />
-                <span className="absolute -top-0.5 -right-0.5 bg-[#C8102E] text-white text-[9px] sm:text-[10px] w-4 h-4 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300 font-bold">
-                  0
-                </span>
+                {totalItems > 0 && <span className="absolute -top-0.5 -right-0.5 bg-[#C8102E] text-white text-[9px] sm:text-[10px] w-4 h-4 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300 font-bold">
+                    {totalItems > 99 ? '99+' : totalItems}
+                  </span>}
               </Link>
             </div>
           </div>
@@ -67,13 +68,10 @@ export function Header() {
 
         {/* Mobile Menu Overlay */}
         {mobileMenuOpen && <>
-            {/* Backdrop */}
             <div className="lg:hidden fixed inset-0 bg-black/50 z-40 animate-fade-in" onClick={() => setMobileMenuOpen(false)}></div>
 
-            {/* Menu Panel */}
             <div className="lg:hidden fixed inset-y-0 left-0 w-[280px] sm:w-[320px] bg-white z-50 shadow-2xl animate-slide-in-left overflow-y-auto">
               <div className="p-6 space-y-8">
-                {/* Logo in menu */}
                 <div className="flex items-center justify-between pb-6 border-b border-black/10">
                   <Link to="/" onClick={() => setMobileMenuOpen(false)} className="text-xl tracking-[0.2em] font-bold">
                     ORIENT
@@ -83,12 +81,11 @@ export function Header() {
                   </button>
                 </div>
 
-                {/* Navigation Links */}
                 <nav className="flex flex-col space-y-6">
                   <Link to="/catalog" onClick={() => setMobileMenuOpen(false)} className="text-lg font-semibold tracking-wider uppercase hover:text-[#C8102E] transition-colors">
                     Каталог
                   </Link>
-                  <Link to="/collection/sports" onClick={() => setMobileMenuOpen(false)} className="text-lg font-semibold tracking-wider uppercase hover:text-[#C8102E] transition-colors">
+                  <Link to="/collections" onClick={() => setMobileMenuOpen(false)} className="text-lg font-semibold tracking-wider uppercase hover:text-[#C8102E] transition-colors">
                     Коллекции
                   </Link>
                   <Link to="/history" onClick={() => setMobileMenuOpen(false)} className="text-lg font-semibold tracking-wider uppercase hover:text-[#C8102E] transition-colors">
@@ -99,18 +96,13 @@ export function Header() {
                   </Link>
                 </nav>
 
-                {/* Actions */}
-                <div className="pt-6 border-t border-black/10 space-y-4">
+                <div className="pt-6 border-t border-black/10">
                   <button onClick={() => {
                 setMobileMenuOpen(false);
                 setSearchOpen(true);
               }} className="flex items-center space-x-3 text-base font-medium hover:text-[#C8102E] transition-colors w-full">
                     <SearchIcon className="w-5 h-5" strokeWidth={2} />
                     <span>Поиск</span>
-                  </button>
-                  <button className="flex items-center space-x-3 text-base font-medium hover:text-[#C8102E] transition-colors w-full">
-                    <UserIcon className="w-5 h-5" strokeWidth={2} />
-                    <span>Войти</span>
                   </button>
                 </div>
               </div>
@@ -133,7 +125,6 @@ export function Header() {
                 </button>
               </div>
 
-              {/* Search Results */}
               {searchQuery && <div className="mt-8 space-y-6">
                   <div className="flex items-center justify-between">
                     <p className="text-sm text-black/60">Результаты поиска</p>
@@ -145,7 +136,6 @@ export function Header() {
                     </Link>
                   </div>
 
-                  {/* Quick Results */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {[{
                 id: '1',
@@ -178,7 +168,6 @@ export function Header() {
                       </Link>)}
                   </div>
 
-                  {/* Popular Searches */}
                   <div className="pt-6 border-t border-black/10">
                     <p className="text-xs tracking-wider uppercase text-black/50 mb-4">
                       Популярные запросы
@@ -191,7 +180,6 @@ export function Header() {
                   </div>
                 </div>}
 
-              {/* Empty State */}
               {!searchQuery && <div className="mt-12 text-center space-y-4">
                   <SearchIcon className="w-12 h-12 text-black/20 mx-auto" strokeWidth={1.5} />
                   <p className="text-sm text-black/40">
@@ -201,7 +189,6 @@ export function Header() {
             </div>
           </div>
 
-          {/* Click outside to close */}
           <div className="absolute inset-0 -z-10" onClick={() => {
         setSearchOpen(false);
         setSearchQuery('');

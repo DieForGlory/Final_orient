@@ -1,5 +1,5 @@
 // API Base URL - замените на ваш реальный API URL
-const API_BASE_URL = import.meta.env?.VITE_API_URL || 'http://localhost:3001';
+const API_BASE_URL = import.meta.env?.VITE_API_URL || 'http://localhost:8000';
 interface RequestOptions extends RequestInit {
   requiresAuth?: boolean;
 }
@@ -154,6 +154,33 @@ class ApiService {
         note
       })
     });
+  }
+
+  // Bookings
+  getBookings(status?: string) {
+    const queryParams = new URLSearchParams();
+    if (status) queryParams.append('status', status);
+    const query = queryParams.toString();
+    return this.request(`/api/admin/bookings${query ? `?${query}` : ''}`);
+  }
+  getBooking(id: number) {
+    return this.request(`/api/admin/bookings/${id}`);
+  }
+  updateBookingStatus(id: number, status: string) {
+    return this.request(`/api/admin/bookings/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        status
+      })
+    });
+  }
+  deleteBooking(id: number) {
+    return this.request(`/api/admin/bookings/${id}`, {
+      method: 'DELETE'
+    });
+  }
+  getBookingsStats() {
+    return this.request('/api/admin/bookings/stats/summary');
   }
 
   // Users

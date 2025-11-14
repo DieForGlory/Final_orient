@@ -2,7 +2,7 @@
 Pydantic schemas for request/response validation
 """
 from pydantic import BaseModel, EmailStr
-from typing import Optional, List, Dict
+from typing import Optional, List
 from datetime import datetime
 
 # Auth schemas
@@ -122,3 +122,33 @@ class HeritageSection(BaseModel):
     ctaText: str
     ctaLink: str
     yearsText: str
+
+# Booking schemas
+class BookingCreate(BaseModel):
+    name: str
+    phone: str
+    email: EmailStr
+    date: str
+    time: str
+    message: Optional[str] = None
+    boutique: Optional[str] = "Orient Ташкент"
+
+class BookingUpdate(BaseModel):
+    status: str  # pending, confirmed, completed, cancelled
+
+class BookingResponse(BaseModel):
+    id: int
+    booking_number: str
+    name: str
+    phone: str
+    email: str
+    date: str
+    time: str
+    message: Optional[str]
+    status: str
+    boutique: str
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True

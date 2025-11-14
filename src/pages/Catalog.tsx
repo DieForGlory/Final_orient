@@ -1,92 +1,71 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FilterSidebar } from '../components/FilterSidebar';
 import { ProductCard } from '../components/ProductCard';
 import { SlidersHorizontalIcon, XIcon, GridIcon, ListIcon } from 'lucide-react';
-import { Link } from 'react-router-dom';
-const CATALOG_WATCHES = [{
-  id: '1',
-  name: 'Kamasu Automatic Diver',
-  collection: 'SPORTS',
-  price: 45900,
-  image: 'https://images.unsplash.com/photo-1587836374828-4dbafa94cf0e?w=600&q=80'
-}, {
-  id: '2',
-  name: 'Bambino Classic',
-  collection: 'CLASSIC',
-  price: 32900,
-  image: 'https://images.unsplash.com/photo-1524805444758-089113d48a6d?w=600&q=80'
-}, {
-  id: '3',
-  name: 'Mako III Automatic',
-  collection: 'SPORTS',
-  price: 41900,
-  image: 'https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?w=600&q=80'
-}, {
-  id: '4',
-  name: 'Sun & Moon Classic',
-  collection: 'CLASSIC',
-  price: 67900,
-  image: 'https://images.unsplash.com/photo-1614164185128-e4ec99c436d7?w=600&q=80'
-}, {
-  id: '5',
-  name: 'Ray II Automatic',
-  collection: 'SPORTS',
-  price: 38900,
-  image: 'https://images.unsplash.com/photo-1533139502658-0198f920d8e8?w=600&q=80'
-}, {
-  id: '6',
-  name: 'Defender Chronograph',
-  collection: 'CONTEMPORARY',
-  price: 52900,
-  image: 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?w=600&q=80'
-}, {
-  id: '7',
-  name: 'Maestro Moon Phase',
-  collection: 'CLASSIC',
-  price: 89900,
-  image: 'https://images.unsplash.com/photo-1611930022073-b7a4ba5fcccd?w=600&q=80'
-}, {
-  id: '8',
-  name: 'Triton Neptune',
-  collection: 'SPORTS',
-  price: 71900,
-  image: 'https://images.unsplash.com/photo-1509048191080-d2984bad6ae5?w=600&q=80'
-}, {
-  id: '9',
-  name: 'Sentinel Automatic',
-  collection: 'CLASSIC',
-  price: 43900,
-  image: 'https://images.unsplash.com/photo-1594534475808-b18fc33b045e?w=600&q=80'
-}, {
-  id: '10',
-  name: 'Aviator Chronograph',
-  collection: 'CONTEMPORARY',
-  price: 58900,
-  image: 'https://images.unsplash.com/photo-1547996160-81dfa63595aa?w=600&q=80'
-}, {
-  id: '11',
-  name: 'Diver King',
-  collection: 'SPORTS',
-  price: 76900,
-  image: 'https://images.unsplash.com/photo-1526045478516-99145907023c?w=600&q=80'
-}, {
-  id: '12',
-  name: 'Heritage Dress',
-  collection: 'CLASSIC',
-  price: 54900,
-  image: 'https://images.unsplash.com/photo-1539874754764-5a96559165b0?w=600&q=80'
-}];
-const ITEMS_PER_LOAD = 6;
+import { Link, useSearchParams } from 'react-router-dom';
+import { publicApi } from '../services/publicApi';
+interface Product {
+  id: string;
+  name: string;
+  collection: string;
+  price: number;
+  image: string;
+}
 export function Catalog() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 12,
+    total: 0,
+    totalPages: 0
+  });
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState('popular');
-  const [itemsToShow, setItemsToShow] = useState(ITEMS_PER_LOAD);
-  const currentWatches = CATALOG_WATCHES.slice(0, itemsToShow);
-  const hasMore = itemsToShow < CATALOG_WATCHES.length;
-  const loadMore = () => {
-    setItemsToShow(prev => Math.min(prev + ITEMS_PER_LOAD, CATALOG_WATCHES.length));
+  // Get filters from URL
+  const filters = {
+    collection: searchParams.get('collection') || '',
+    search: searchParams.get('search') || '',
+    minPrice: searchParams.get('minPrice') ? parseInt(searchParams.get('minPrice')!) : undefined,
+    maxPrice: searchParams.get('maxPrice') ? parseInt(searchParams.get('maxPrice')!) : undefined,
+    page: searchParams.get('page') ? parseInt(searchParams.get('page')!) : 1
   };
+  useEffect(() => {
+    fetchProducts();
+  }, [searchParams]);
+  const fetchProducts = async () => {
+    setLoading(true);
+    try {
+      const response = await publicApi.getProducts({
+        ...filters,
+        limit: pagination.limit
+      });
+      setProducts(response.data);
+      setPagination(response.pagination);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  const handlePageChange = (page: number) => {
+    searchParams.set('page', page.toString());
+    setSearchParams(searchParams);
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
+  const clearFilters = () => {
+    setSearchParams({});
+  };
+  const removeFilter = (key: string) => {
+    searchParams.delete(key);
+    setSearchParams(searchParams);
+  };
+  const activeFilters = Array.from(searchParams.entries()).filter(([key]) => key !== 'page' && key !== 'limit');
   return <div className="w-full bg-white">
       {/* Hero Section */}
       <section className="relative bg-black text-white py-16 sm:py-24 overflow-hidden">
@@ -96,7 +75,6 @@ export function Catalog() {
         </div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-8 lg:px-16">
-          {/* Breadcrumb */}
           <div className="flex items-center space-x-2 sm:space-x-3 text-[10px] sm:text-xs tracking-[0.1em] sm:tracking-[0.15em] text-white/50 font-medium mb-8 sm:mb-12">
             <Link to="/" className="hover:text-white transition-colors">
               ГЛАВНАЯ
@@ -141,7 +119,6 @@ export function Catalog() {
             {/* Toolbar */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 sm:mb-12 pb-4 sm:pb-6 border-b border-black/10">
               <div className="flex items-center space-x-4 sm:space-x-6 w-full sm:w-auto">
-                {/* Mobile Filter Button */}
                 <button onClick={() => setShowFilters(true)} className="lg:hidden flex items-center space-x-2 border-2 border-black px-4 sm:px-6 py-2 sm:py-3 hover:bg-black hover:text-white transition-all duration-500 flex-1 sm:flex-initial justify-center">
                   <SlidersHorizontalIcon className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2} />
                   <span className="text-xs sm:text-sm tracking-[0.15em] font-medium uppercase">
@@ -149,16 +126,14 @@ export function Catalog() {
                   </span>
                 </button>
 
-                {/* Results Count */}
                 <div className="hidden sm:flex items-center space-x-3">
                   <p className="text-sm font-medium text-black">
-                    {CATALOG_WATCHES.length} моделей
+                    {pagination.total} моделей
                   </p>
                 </div>
               </div>
 
               <div className="flex items-center space-x-3 sm:space-x-4 w-full sm:w-auto">
-                {/* View Mode Toggle - Desktop only */}
                 <div className="hidden md:flex items-center border border-black/20">
                   <button onClick={() => setViewMode('grid')} className={`p-3 transition-colors ${viewMode === 'grid' ? 'bg-black text-white' : 'hover:bg-gray-50'}`} aria-label="Сетка">
                     <GridIcon className="w-5 h-5" strokeWidth={2} />
@@ -168,7 +143,6 @@ export function Catalog() {
                   </button>
                 </div>
 
-                {/* Sort Dropdown */}
                 <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="text-xs sm:text-sm tracking-[0.1em] font-medium border-2 border-black px-3 sm:px-6 py-2 sm:py-3 focus:outline-none focus:border-[#C8102E] bg-white cursor-pointer uppercase flex-1 sm:flex-initial">
                   <option value="popular">Популярные</option>
                   <option value="price-asc">Цена ↑</option>
@@ -179,42 +153,44 @@ export function Catalog() {
               </div>
             </div>
 
-            {/* Active Filters Chips */}
-            <div className="flex flex-wrap gap-2 sm:gap-3 mb-6 sm:mb-8">
-              <button className="flex items-center space-x-2 bg-black text-white px-3 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs tracking-[0.15em] font-medium hover:bg-[#C8102E] transition-colors">
-                <span>SPORTS</span>
-                <XIcon className="w-3 h-3" strokeWidth={2} />
-              </button>
-              <button className="flex items-center space-x-2 bg-black text-white px-3 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs tracking-[0.15em] font-medium hover:bg-[#C8102E] transition-colors">
-                <span>30,000 - 50,000 ₽</span>
-                <XIcon className="w-3 h-3" strokeWidth={2} />
-              </button>
-              <button className="text-[10px] sm:text-xs tracking-[0.15em] font-medium text-[#C8102E] hover:underline uppercase">
-                Очистить все
-              </button>
-            </div>
-
-            {/* Products Grid - 2 columns on mobile, 3 on desktop */}
-            <div className={`grid gap-6 sm:gap-8 lg:gap-12 ${viewMode === 'grid' ? 'grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}`}>
-              {currentWatches.map((watch, index) => <ProductCard key={watch.id} {...watch} index={index} />)}
-            </div>
-
-            {/* Load More Button */}
-            {hasMore && <div className="mt-12 sm:mt-20 text-center">
-                <button onClick={loadMore} className="inline-flex items-center space-x-4 border-2 border-black px-8 sm:px-12 py-4 sm:py-5 text-xs sm:text-sm tracking-[0.2em] font-medium hover:bg-black hover:text-white transition-all duration-700 uppercase">
-                  <span>Загрузить ещё</span>
+            {/* Active Filters */}
+            {activeFilters.length > 0 && <div className="flex flex-wrap gap-2 sm:gap-3 mb-6 sm:mb-8">
+                {activeFilters.map(([key, value]) => <button key={key} onClick={() => removeFilter(key)} className="flex items-center space-x-2 bg-black text-white px-3 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs tracking-[0.15em] font-medium hover:bg-[#C8102E] transition-colors">
+                    <span>{value}</span>
+                    <XIcon className="w-3 h-3" strokeWidth={2} />
+                  </button>)}
+                <button onClick={clearFilters} className="text-[10px] sm:text-xs tracking-[0.15em] font-medium text-[#C8102E] hover:underline uppercase">
+                  Очистить все
                 </button>
-                <p className="text-xs sm:text-sm text-black/60 mt-4">
-                  Показано {itemsToShow} из {CATALOG_WATCHES.length} моделей
-                </p>
               </div>}
 
-            {/* All Loaded Message */}
-            {!hasMore && <div className="mt-12 sm:mt-20 text-center">
-                <p className="text-sm text-black/60">
-                  Показаны все {CATALOG_WATCHES.length} моделей
-                </p>
-              </div>}
+            {/* Products Grid */}
+            {loading ? <div className="flex items-center justify-center py-20">
+                <div className="w-12 h-12 border-4 border-[#C8102E] border-t-transparent rounded-full animate-spin"></div>
+              </div> : products.length === 0 ? <div className="text-center py-20">
+                <p className="text-xl text-black/60 mb-4">Товары не найдены</p>
+                <button onClick={clearFilters} className="text-[#C8102E] hover:underline font-medium">
+                  Сбросить фильтры
+                </button>
+              </div> : <>
+                <div className={`grid gap-6 sm:gap-8 lg:gap-12 ${viewMode === 'grid' ? 'grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}`}>
+                  {products.map((product, index) => <ProductCard key={product.id} {...product} index={index} />)}
+                </div>
+
+                {/* Pagination */}
+                {pagination.totalPages > 1 && <div className="mt-12 sm:mt-20 flex flex-col items-center gap-6">
+                    <div className="flex items-center gap-2">
+                      {Array.from({
+                  length: pagination.totalPages
+                }, (_, i) => i + 1).map(page => <button key={page} onClick={() => handlePageChange(page)} className={`px-4 py-2 border-2 transition-all ${pagination.page === page ? 'bg-[#C8102E] text-white border-[#C8102E]' : 'border-black/20 hover:border-black'}`}>
+                          {page}
+                        </button>)}
+                    </div>
+                    <p className="text-xs sm:text-sm text-black/60">
+                      Показано {products.length} из {pagination.total} моделей
+                    </p>
+                  </div>}
+              </>}
           </div>
         </div>
       </div>

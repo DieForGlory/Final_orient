@@ -2,11 +2,10 @@
 Database configuration and connection
 SQLite database with SQLAlchemy ORM
 """
-from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, Text, DateTime, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, Text, DateTime, ForeignKey, JSON
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from datetime import datetime
-import json
 
 # Database URL
 DATABASE_URL = "sqlite:///./orient.db"
@@ -47,7 +46,7 @@ class User(Base):
 class Product(Base):
     __tablename__ = "products"
     
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(String, primary_key=True, index=True)
     name = Column(String, nullable=False, index=True)
     collection = Column(String, nullable=False, index=True)
     price = Column(Float, nullable=False)
@@ -59,6 +58,7 @@ class Product(Base):
     in_stock = Column(Boolean, default=True)
     stock_quantity = Column(Integer, default=0)
     sku = Column(String, unique=True)
+    is_featured = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -76,6 +76,7 @@ class Product(Base):
             "inStock": self.in_stock,
             "stockQuantity": self.stock_quantity,
             "sku": self.sku,
+            "isFeatured": self.is_featured,
             "createdAt": self.created_at.isoformat() if self.created_at else None,
             "updatedAt": self.updated_at.isoformat() if self.updated_at else None,
         }
@@ -83,11 +84,10 @@ class Product(Base):
 class Collection(Base):
     __tablename__ = "collections"
     
-    id = Column(String, primary_key=True)
-    name = Column(String, nullable=False)
+    id = Column(String, primary_key=True, index=True)
+    name = Column(String, unique=True, index=True)
     description = Column(Text)
     image = Column(String)
-    watch_count = Column(Integer, default=0)
     number = Column(String)
     active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -113,6 +113,22 @@ class Order(Base):
     
     user = relationship("User", back_populates="orders")
 
+class Booking(Base):
+    __tablename__ = "bookings"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    booking_number = Column(String, unique=True, index=True)
+    name = Column(String)
+    phone = Column(String)
+    email = Column(String)
+    date = Column(String)
+    time = Column(String)
+    message = Column(Text, nullable=True)
+    status = Column(String, default="pending")  # pending, confirmed, completed, cancelled
+    boutique = Column(String, default="Orient Ташкент")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
 class ContentHero(Base):
     __tablename__ = "content_hero"
     
@@ -129,20 +145,12 @@ class ContentPromoBanner(Base):
     
     id = Column(Integer, primary_key=True, default=1)
     text = Column(String, nullable=False)
-    code = Column(String, nullable=False)
+    code = Column(String, nullable=True)
     active = Column(Boolean, default=True)
     background_color = Column(String, default="#000000")
     text_color = Column(String, default="#FFFFFF")
     highlight_color = Column(String, default="#C8102E")
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-class ContentFeaturedWatch(Base):
-    __tablename__ = "content_featured_watches"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
-    order_num = Column(Integer, nullable=False)
-    is_new = Column(Boolean, default=False)
 
 class ContentHeritage(Base):
     __tablename__ = "content_heritage"

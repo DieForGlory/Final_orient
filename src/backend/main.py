@@ -7,53 +7,49 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
 
-from routes import admin, products, collections, orders, content, upload
+from database import init_db
+from routes import admin, products, collections, orders, content, upload, bookings
 
-# Create FastAPI app
+# Initialize database
+init_db()
+
 app = FastAPI(
     title="Orient Watch API",
-    description="Backend API for Orient Watch e-commerce",
+    description="API for Orient Watch e-commerce platform",
     version="1.0.0"
 )
 
-# CORS middleware
+# CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",  # Vite dev server
-        "http://localhost:3000",  # Alternative dev port
-        "https://orient.uz",      # Production (замените на ваш домен)
-    ],
+    allow_origins=["http://localhost:5173", "http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Mount static files for uploads
+# Mount uploads directory
 if not os.path.exists("uploads"):
     os.makedirs("uploads")
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # Include routers
-app.include_router(admin.router, prefix="/api/admin", tags=["Admin"])
-app.include_router(products.router, prefix="/api", tags=["Products"])
-app.include_router(collections.router, prefix="/api", tags=["Collections"])
-app.include_router(orders.router, prefix="/api", tags=["Orders"])
-app.include_router(content.router, prefix="/api", tags=["Content"])
-app.include_router(upload.router, prefix="/api", tags=["Upload"])
+app.include_router(admin.router)
+app.include_router(products.router)
+app.include_router(collections.router)
+app.include_router(orders.router)
+app.include_router(content.router)
+app.include_router(upload.router)
+app.include_router(bookings.router)
 
 @app.get("/")
-async def root():
-    return {
-        "message": "Orient Watch API",
-        "version": "1.0.0",
-        "docs": "/docs"
-    }
+def read_root():
+    return {"message": "Orient Watch API"}
 
 @app.get("/health")
-async def health_check():
+def health_check():
     return {"status": "healthy"}
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(app, host="0.0.0.0", port=8000)

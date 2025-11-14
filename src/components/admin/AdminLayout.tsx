@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboardIcon, PackageIcon, ShoppingBagIcon, UsersIcon, SettingsIcon, LogOutIcon, MenuIcon, XIcon, ImageIcon, TagIcon } from 'lucide-react';
+import { LayoutDashboardIcon, PackageIcon, ShoppingBagIcon, UsersIcon, SettingsIcon, LogOutIcon, MenuIcon, XIcon, ImageIcon, TagIcon, FilterIcon, CalendarIcon } from 'lucide-react';
 export function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -23,9 +23,17 @@ export function AdminLayout() {
     icon: TagIcon,
     label: 'Коллекции'
   }, {
+    path: '/admin/filters',
+    icon: FilterIcon,
+    label: 'Фильтры'
+  }, {
     path: '/admin/orders',
     icon: ShoppingBagIcon,
     label: 'Заказы'
+  }, {
+    path: '/admin/bookings',
+    icon: CalendarIcon,
+    label: 'Записи в бутик'
   }, {
     path: '/admin/users',
     icon: UsersIcon,
@@ -44,12 +52,10 @@ export function AdminLayout() {
       {/* Top Header */}
       <header className="bg-black text-white sticky top-0 z-40 border-b border-white/10">
         <div className="flex items-center justify-between h-16 px-4 lg:px-8">
-          {/* Mobile Menu Button */}
           <button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden p-2 hover:bg-white/10 transition-colors">
             <MenuIcon className="w-6 h-6" strokeWidth={2} />
           </button>
 
-          {/* Logo */}
           <Link to="/admin/dashboard" className="flex items-center space-x-3">
             <h1 className="text-2xl font-bold tracking-[0.25em]">ORIENT</h1>
             <span className="hidden sm:block text-xs tracking-[0.2em] text-[#C8102E] font-medium uppercase">
@@ -57,7 +63,6 @@ export function AdminLayout() {
             </span>
           </Link>
 
-          {/* User Menu */}
           <div className="flex items-center space-x-4">
             <Link to="/" target="_blank" className="hidden sm:block text-sm hover:text-[#C8102E] transition-colors">
               Перейти на сайт

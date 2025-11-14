@@ -1,14 +1,8 @@
 import React, { useState } from 'react';
 import { MinusIcon, PlusIcon, TrashIcon, ArrowRightIcon, CheckCircleIcon, TruckIcon, CreditCardIcon, MapPinIcon, UserIcon, PackageIcon } from 'lucide-react';
-import { Link } from 'react-router-dom';
-interface CartItem {
-  id: string;
-  name: string;
-  collection: string;
-  price: number;
-  image: string;
-  quantity: number;
-}
+import { Link, useNavigate } from 'react-router-dom';
+import { publicApi } from '../services/publicApi';
+import { useCart } from '../contexts/CartContext';
 interface FormData {
   // Contact
   fullName: string;
@@ -23,24 +17,17 @@ interface FormData {
   deliveryMethod: 'standard' | 'express' | 'pickup';
   paymentMethod: 'payme' | 'click' | 'cash';
 }
-const INITIAL_CART: CartItem[] = [{
-  id: '1',
-  name: 'Kamasu Automatic Diver',
-  collection: 'SPORTS',
-  price: 45900,
-  image: 'https://images.unsplash.com/photo-1587836374828-4dbafa94cf0e?w=400&q=80',
-  quantity: 1
-}, {
-  id: '4',
-  name: 'Sun & Moon Classic',
-  collection: 'CLASSIC',
-  price: 67900,
-  image: 'https://images.unsplash.com/photo-1614164185128-e4ec99c436d7?w=400&q=80',
-  quantity: 1
-}];
 export function Cart() {
-  const [cartItems, setCartItems] = useState<CartItem[]>(INITIAL_CART);
+  const navigate = useNavigate();
+  const {
+    items: cartItems,
+    updateQuantity,
+    removeItem,
+    clearCart,
+    totalPrice
+  } = useCart();
   const [currentStep, setCurrentStep] = useState<'cart' | 'checkout'>('cart');
+  const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     fullName: '',
     email: '',
@@ -53,21 +40,10 @@ export function Cart() {
     paymentMethod: 'payme'
   });
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
-  const updateQuantity = (id: string, delta: number) => {
-    setCartItems(items => items.map(item => item.id === id ? {
-      ...item,
-      quantity: Math.max(1, item.quantity + delta)
-    } : item));
-  };
-  const removeItem = (id: string) => {
-    setCartItems(items => items.filter(item => item.id !== id));
-  };
-  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const subtotal = totalPrice;
   const deliveryCost = formData.deliveryMethod === 'express' ? 1500 : formData.deliveryMethod === 'pickup' ? 0 : subtotal > 50000 ? 0 : 500;
   const total = subtotal + deliveryCost;
   // Available payment methods based on delivery method
-  // Standard/Express delivery: only online payment (Payme, Click)
-  // Pickup: all payment methods including cash
   const availablePaymentMethods = [{
     value: 'payme',
     label: 'Payme',
@@ -97,15 +73,48 @@ export function Cart() {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (validateForm()) {
-      console.log('Order submitted:', {
-        cartItems,
-        formData,
+    if (!validateForm()) {
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const orderData = {
+        items: cartItems.map(item => ({
+          productId: item.id,
+          quantity: item.quantity,
+          price: item.price
+        })),
+        customer: {
+          fullName: formData.fullName,
+          email: formData.email,
+          phone: formData.phone
+        },
+        deliveryMethod: formData.deliveryMethod,
+        paymentMethod: formData.paymentMethod,
+        deliveryAddress: formData.deliveryMethod !== 'pickup' ? {
+          address: formData.address,
+          city: formData.city,
+          postalCode: formData.postalCode,
+          country: formData.country
+        } : null,
+        subtotal,
+        shipping: deliveryCost,
         total
-      });
-      alert('Заказ оформлен! (демо)');
+      };
+      const response = await publicApi.createOrder(orderData);
+      // Очистить корзину через CartContext
+      clearCart();
+      // Показать успешное сообщение
+      alert(`✅ Заказ #${response.orderNumber} успешно создан!\n\nМы свяжемся с вами в ближайшее время.`);
+      // Перенаправить на главную
+      navigate('/');
+    } catch (error) {
+      console.error('Error creating order:', error);
+      alert('❌ Ошибка при создании заказа. Пожалуйста, попробуйте снова или свяжитесь с нами.');
+    } finally {
+      setSubmitting(false);
     }
   };
   const handleInputChange = (field: keyof FormData, value: string) => {
@@ -215,13 +224,13 @@ export function Cart() {
                     </div>
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
                       <div className="flex items-center border-2 border-black w-fit">
-                        <button onClick={() => updateQuantity(item.id, -1)} className="px-3 py-2 hover:bg-black hover:text-white transition-colors">
+                        <button onClick={() => updateQuantity(item.id, item.quantity - 1)} className="px-3 py-2 hover:bg-black hover:text-white transition-colors">
                           <MinusIcon className="w-4 h-4" strokeWidth={2} />
                         </button>
                         <span className="px-4 sm:px-6 py-2 border-x-2 border-black font-semibold min-w-[50px] sm:min-w-[60px] text-center">
                           {item.quantity}
                         </span>
-                        <button onClick={() => updateQuantity(item.id, 1)} className="px-3 py-2 hover:bg-black hover:text-white transition-colors">
+                        <button onClick={() => updateQuantity(item.id, item.quantity + 1)} className="px-3 py-2 hover:bg-black hover:text-white transition-colors">
                           <PlusIcon className="w-4 h-4" strokeWidth={2} />
                         </button>
                       </div>
@@ -285,8 +294,8 @@ export function Cart() {
             </div>
           </div> : <form onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
+              {/* Contact Information */}
               <div className="lg:col-span-2 space-y-12">
-                {/* Contact Information - same as before */}
                 <div className="space-y-6">
                   <div className="flex items-center space-x-4">
                     <div className="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center font-semibold">
@@ -327,7 +336,7 @@ export function Cart() {
                   </div>
                 </div>
 
-                {/* Delivery Method - same as before */}
+                {/* Delivery Method */}
                 <div className="space-y-6">
                   <div className="flex items-center space-x-4">
                     <div className="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center font-semibold">
@@ -408,7 +417,7 @@ export function Cart() {
                     </div>
                   </div>}
 
-                {/* Payment Method - CORRECTED LOGIC */}
+                {/* Payment Method */}
                 <div className="space-y-6">
                   <div className="flex items-center space-x-4">
                     <div className="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center font-semibold">
@@ -437,7 +446,7 @@ export function Cart() {
                 </div>
               </div>
 
-              {/* Order Summary Sidebar - same as before */}
+              {/* Order Summary Sidebar */}
               <div className="lg:col-span-1">
                 <div className="border-2 border-black/10 p-8 sticky top-24 space-y-6">
                   <h2 className="text-xl font-bold tracking-tight uppercase">
@@ -481,10 +490,10 @@ export function Cart() {
                         {total.toLocaleString('ru-RU')} ₽
                       </span>
                     </div>
-                    <button type="submit" className="w-full bg-[#C8102E] hover:bg-[#A00D24] text-white py-5 text-sm tracking-[0.2em] font-semibold transition-all duration-500 uppercase mb-4">
-                      Оформить заказ
+                    <button type="submit" disabled={submitting} className="w-full bg-[#C8102E] hover:bg-[#A00D24] text-white py-5 text-sm tracking-[0.2em] font-semibold transition-all duration-500 uppercase mb-4 disabled:opacity-50 disabled:cursor-not-allowed">
+                      {submitting ? 'Оформление...' : 'Оформить заказ'}
                     </button>
-                    <button type="button" onClick={() => setCurrentStep('cart')} className="w-full border-2 border-black hover:bg-black hover:text-white py-4 text-sm tracking-[0.2em] font-semibold transition-all duration-500 uppercase">
+                    <button type="button" onClick={() => setCurrentStep('cart')} disabled={submitting} className="w-full border-2 border-black hover:bg-black hover:text-white py-4 text-sm tracking-[0.2em] font-semibold transition-all duration-500 uppercase disabled:opacity-50">
                       Назад в корзину
                     </button>
                   </div>
